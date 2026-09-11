@@ -1,0 +1,48 @@
+# ===== Agent =====
+.zcode/
+
+# ===== 归档 =====
+_archives/
+
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ===== 编辑器 / IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# ===== 日志与临时文件 =====
+*.log
+logs/
+tmp/
+.cache/
+*.tmp
+*.bak
+
+# ===== 环境 / 密钥 =====
+.env
+.env.*
+!.env.example
+
+# ===== Node（若后续添加脚本）=====
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ===== Python（若后续添加脚本）=====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ===== 系统杂项 =====
+Thumbs.db
+desktop.ini
