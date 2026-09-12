@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-radar": {
+      "source": "LearnPrompt/ai-news-radar",
+      "sourceType": "github",
+      "skillPath": "skills/radar/SKILL.md",
+      "computedHash": "5f92a4d09d79767705e9ffbe30e7fa20d9e551425e91a4df9a9c2d43965c004b"
+    }
+  }
+}

@@ -1,8 +1,10 @@
 # ===== Agent =====
 .zcode/
+.workbuddy*
 
 # ===== 归档 =====
 _archives/
+.archives/
 
 # ===== macOS =====
 .DS_Store
