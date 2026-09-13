@@ -12,8 +12,31 @@
 #   FOLO_TOKEN    folo 认证（或先 npx --yes folocli@latest login 存登录态）
 #   GH_TOKEN      gh 认证（或先 gh auth login；不配则 L3 退匿名限流）
 # 依赖：node/npx、pi、python3、curl
+#
+# 配置来源优先级（高到低）：命令行环境变量 > 仓库根 .env 文件 > pi 本机默认。
+# .env 模板见 .env.example：复制为 .env 填写，.env 已 gitignore 不入库。
 set -euo pipefail
 cd "$(dirname "$0")"
+
+# .env 支持：仓库根有 .env 则加载白名单键；已导出的环境变量优先，.env 不覆盖
+if [ -f .env ]; then
+  while IFS= read -r _line || [ -n "$_line" ]; do
+    _line="${_line%$'\r'}"
+    case "$_line" in
+      ''|\#*) continue ;;
+      PI_PROVIDER=*|PI_MODEL=*|PI_API_KEY=*|PI_THINKING=*|FOLO_TOKEN=*|GH_TOKEN=*)
+        _key="${_line%%=*}" _val="${_line#*=}"
+        case "$_val" in
+          \"*\") _val="${_val#\"}"; _val="${_val%\"}" ;;
+          \'*\') _val="${_val#\'}"; _val="${_val%\'}" ;;
+        esac
+        if [ -z "${!_key:-}" ]; then export "$_key=$_val"; fi
+        ;;
+      *) echo "警告：.env 忽略未识别的键：${_line%%=*}" >&2 ;;
+    esac
+  done < .env
+fi
+unset _line _key _val
 
 # L1 需要 folo 认证：FOLO_TOKEN 或 folocli login 存储态，二者有其一即可
 npx --yes folocli@latest whoami >/dev/null 2>&1 \
