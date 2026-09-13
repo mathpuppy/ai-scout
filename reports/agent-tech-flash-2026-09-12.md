@@ -3,12 +3,30 @@
 本周一句话：agent 运行时开始被当商品卖（OpenAI 把驱动 Codex 的整套 harness 开放成公测 API），同周 agent 的安全债集中爆雷（RubyGems 遭智能体集群攻击取证）；热度最高的 DeepSeek V4.1-Flash 卖点恰好是「为 agent 降本」。
 
 👉 值得看 / 试（6 条）
-1. OpenAI Agents API——驱动 Codex 的 harness 连同云端基础设施以单次 API 调用开放公测，自建 agent 基座多了官方选项
-2. DeepSeek V4.1-Flash——新架构家族首发，KV cache 压缩 + 1M 上下文，直击 agent 部署成本
-3. GPT-6 Astra 基座化——全量推送成为 OpenAI agent 产品默认基座，模型 rollout 已是 harness 常规工程负担
-4. 上下文管理进入「可编程预算」——Codex / pi / Claude Code / LangChain 四家同周把上下文从自动压缩推向预算化，自建 harness 可抄思路
-5. 多会话并行与 HITL 异步化——Codex worktree 隔离会话 + Windows 常驻 server、Claude Code 并发上限可调、行内旁路问答
-6. pi 0.85.x——SDK 会话恢复 + GPT-6 Astra 接入；main 分支押注 per-model 压缩预算
+
+1. OpenAI Agents API 公测（09-10）
+   - 是什么：驱动 Codex 的整套 harness + 云端基础设施以单次 API 调用开放；同日的 ChatGPT Work Data agent 用自然语言连公司数据、生成可分享仪表盘
+   - 对我们：模型厂首次把生产级 harness 当商品卖，agent 起点从「自己搭框架」变「一次调用」；公测可直接接入，与自建 harness 对比成本与能力边界
+
+2. DeepSeek V4.1-Flash（09-10）
+   - 是什么：新架构家族首发——552B MoE（prefill 激活 8B / decode 16B）、原生视觉、1M 上下文、KV cache 大幅压缩、API 降价、MIT 开源；本周热度第一（9 个源同报）
+   - 对我们：卖点是 agent 经济学——多轮会话成本、长时程上下文、可私有化三项全中，直接进模型路由候选实测（评测诚信风波下，先换自己的考场再下结论）
+
+3. GPT-6 Astra 全量基座化（09-09）
+   - 是什么：全量推送到 Plus/Pro/Business/Enterprise，成为 OpenAI agent 产品默认基座；Codex 用四个补丁（0.153.1→0.154.0）完成接入，pi 0.85.1 同步跟进
+   - 对我们：最强模型与 agent 产品捆绑销售定型，接入成本已被各 harness 摊薄；现有工作流里直接启用评估即可
+
+4. 上下文管理进入「可编程预算」（Codex 0.153.0 / pi main / Claude Code 2.1.26x / LangChain）
+   - 是什么：Codex 实验模式三件套（token 预算 + history notes + new_context 工具，暂限订阅会话）；pi 走 per-model 压缩预算；Claude Code 让 skill 上下文成本可见、输出上限可提至 128K 字符；LangChain 出多 agent 上下文组织方法论
+   - 对我们：四家同周收敛到「上下文要预算可见、可控、按模型定制」；pi 的 per-model 预算与 Claude Code 成本可见化在现有工作流可直接采用
+
+5. 多会话并行与 HITL 异步化（Codex 0.154.0 / Claude Code 2.1.269）
+   - 是什么：Codex worktree 隔离检出（每会话独立工作副本）+ Windows 常驻后台 server；Claude Code 子 agent 并发上限可调（1-256）；Codex 行内旁路问答，主任务不停
+   - 对我们：harness 正在变成会话编排平台；worktree 与并发上限是现成能力，多任务并行场景今天就能用
+
+6. pi 0.85.x（09-04 / 09-05 两版）
+   - 是什么：SessionManager.inMemory() 让 SDK 调用方把外部 session 恢复进 pi 续跑；Claude effort 持久化；GPT-6 Astra 双通道接入
+   - 对我们：本团队在用的基座，升级即得；main 分支押注的 per-model 压缩预算下期发版值得盯
 
 👀 值得观望（13 条）
 - 插件生态治理化：SHA-pinned 目录、准入 CI、远程市场、plugin eval，一周三家齐发
