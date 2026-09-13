@@ -43,6 +43,13 @@
 - 超长任务：多智能体协作完成 RSA-260 因式分解刷新纪录；WorkSwarm 用「永续会话」治长任务跑偏
 - 递归自我改进（RSI）：对谈给出时间表预期；openJiuwen 把框架落到办公 agent
 
+🆕 GitHub 新项目（本周新建、星标快涨）
+- 本周风向：coding agent 周边长出「中立基建」层——托管、启动、记忆、脱敏，谁家的 agent 都能用
+- noskillish/bankmcp ⭐196：自托管的只读开放银行 MCP，agent 能查自己的银行账户
+- Loopera-ai/loopera ⭐86：假设驱动的基本面研究 agent，先提假设再找证据验证
+- eskim2001/dsh-cloud ⭐63：DeepSeek Harness 的多租户托管平台
+- tudoumashu/ai-memory-skillpack ⭐48：给 Codex / Claude Code 用的项目记忆 skill 包
+
 📋 仅记录（4 条）
 - 面壁 MiniCPM5-2B：2B 小模型跑通多 agent 协作并上端侧，训练体系开源
 - 阿里云 Token Plan：个人版新增 12 类 Agent 工具
