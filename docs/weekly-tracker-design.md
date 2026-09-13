@@ -63,6 +63,7 @@ run-weekly.sh（首版手动跑，1-2 期顺了再挂 cron）
 - 无官方 Python SDK（维护者拒绝，issue #4174）；需要 Python 时走 `pi -p --mode json` / rpc 子进程。本系统用不到。
 - 调度外部化（cron 后置），顺序执行四条技能调用，段间以落盘文件交接。
 - **技能白名单**：pi 默认还会加载 `~/.agents/skills/` 全局目录（exa / last30days / zhihu 等开发者自用技能），违反运行边界。已用 `pi -p --no-skills --skill <仓库/.agents/skills>` 组合强制只挂仓库技能（已实测生效）。无头运行时技能显式调用 `/skill:<name>`，不赌 description 路由。
+- **迁移配置（env 即契约）**：LLM 配置由环境变量驱动，clone 到新机器设好即跑——`PI_PROVIDER` / `PI_MODEL`（支持 `provider/id:thinking` 组合）/ `PI_API_KEY` / `PI_THINKING` 映射为 pi 的同名 flag；全部未设置时继承 pi 本机 `~/.pi/agent/` 默认。认证类：`FOLO_TOKEN`（folo）、`GH_TOKEN`（gh，不配则 L3 退匿名限流）。注意两点：pi 的 auth.json 已存 key 优先级高于环境变量；pi 也原生认 provider 级变量（如 `ANTHROPIC_API_KEY`）。
 
 ## 建件顺序与首版运行
 
