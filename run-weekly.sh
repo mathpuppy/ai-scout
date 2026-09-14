@@ -64,4 +64,19 @@ run harness-digest   # L2 深度线 → reports/agent-harness-brief-<date>.md
 run line-trending    # L3 潮流线 → raw/lines/trending-<date>.md
 run tracker-merge    # 合流     → reports/agent-tech-brief-<date>.md
 
+# 滚动存档：成功结束后，非本期（日期非今日）的产物移入 .archives/weekly-reports/<今日>/（gitignored）
+TODAY=$(date +%F)
+for f in reports/*.md raw/lines/*.md; do
+  [ -e "$f" ] || continue
+  base=$(basename "$f" .md)
+  if [[ $base =~ -([0-9]{4}-[0-9]{2}-[0-9]{2})(-[0-9]+)?$ ]]; then
+    d=${BASH_REMATCH[1]}
+    if [ "$d" != "$TODAY" ]; then
+      mkdir -p ".archives/weekly-reports/$TODAY"
+      mv "$f" ".archives/weekly-reports/$TODAY/"
+      echo "==> 存档 $f"
+    fi
+  fi
+done
+
 echo "==> 完成 $(date '+%F %T') → reports/agent-tech-brief-$(date +%F).md"

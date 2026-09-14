@@ -8,7 +8,7 @@
 1. **最少件数**：1 个编排脚本 + 3 个新建技能 + 既有 harness-digest + Markdown 产物。没有数据库、注册表、自研服务。
 2. **只用现成 CLI**：folocli / curl / gh / python3 一行流。零 pi 扩展、零 MCP、零新 npm/pip 依赖。
 3. **运行边界写死**：系统运行 = pi + 本仓库 `.agents/skills/`（folo / ai-radar / aihot / harness-digest / line-breadth / line-trending / tracker-merge）+ 裸 CLI。开发者（ZCode）的工具只在开发期用，不进系统。
-4. **状态即文件**：`raw/lines/`（线产物）+ `reports/`（简报）。线产物契约 = 三个固定小节：①事实条目（三元组 + 纳入理由）②本线研判一段 ③候选提名区（有则写，无则省略）。
+4. **状态即文件**：`raw/lines/`（线产物）+ `reports/`（简报），**只保留最新一期**——run-weekly.sh 成功结束后自动把非本期产物移入 `.archives/weekly-reports/<归档日>/`（gitignored，git 历史仍全量可溯）。线产物契约 = 三个固定小节：①事实条目（三元组 + 纳入理由）②本线研判一段 ③候选提名区（有则写，无则省略）。
 5. **按需演进**：以下默认不建，痛点出现再加——确定性归并脚本、模型分层路由、三线并发、第二个 folo 列表、缓存、群发 webhook 推送。
 
 ## 总体架构
