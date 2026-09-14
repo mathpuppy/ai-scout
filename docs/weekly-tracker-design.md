@@ -36,7 +36,7 @@ run-weekly.sh（首版手动跑，1-2 期顺了再挂 cron）
 |---|---|---|---|
 | L1 融合线 | 本周事件全景 + 选题 | folo agent-weekly 列表 + folo 公众号 6 源 + aihot（window=7d）+ ai-radar（仅覆盖运行日前 24h，已知边界） | `.agents/skills/line-breadth/` |
 | L2 harness 深度线 | 4 个 harness 版本级深析 | GitHub API 直连（既有 SOP） | `.agents/skills/harness-digest/`，SOP 不变；产物路径 2026-09-13 起移至 `raw/lines/`（对齐线产物语义，reports/ 只放最终产物） |
-| L3 GitHub 潮流线 | 新兴热门 Agent 项目画像 + L2 监控名单提名 | `gh api search/repositories`（created > 窗口起点，stars 排序） | `.agents/skills/line-trending/` |
+| L3 GitHub 潮流线 | 本周 GitHub 热门（官方周榜）中 Agent 相关项目的筛选、画像 + L2 监控名单提名 | `github.com/trending?since=weekly` 页面轻量抓取（curl，无官方 API） | `.agents/skills/line-trending/` |
 
 - L1「重合即佐证」降级为提示词一句话：同一事件多个源都提 = 热度高，优先纳入。不是机制。
 - L2 是给人看的简报，merge 直读它，不要求额外机读产物。
@@ -45,7 +45,7 @@ run-weekly.sh（首版手动跑，1-2 期顺了再挂 cron）
 ## 合流段（tracker-merge → 周报 + 群发速览）
 
 - 输入：三份当期产物，各取文件名日期最新一份；缺哪条线就跳过并标注，**merge 自身零网络请求**，事实只能来自输入文件。
-- 第二份产物 **`reports/agent-tech-flash-<date>.md`（群发速览）**：自足的要点概览，读者不看周报即可掌握全部核心要点——全部选题按结论标签分三组，详略两档：导入条目 3 行（标题带日期/版本 + 是什么 + 对我们），观望/仅记录各一行；无表格、正文不内嵌链接、零新增事实；行文按「说给同事听」口径——行业黑话换日常词（基座化→成为默认模型、HITL 异步化→边干活边提问），短句直说；固定含「GitHub 新项目」模块（3-5 个：stars 头部 + 方向代表，已并选题的不重复，首行一句本周风向）。默认落盘人工粘贴，webhook 推送见设计原则 5。
+- 第二份产物 **`reports/agent-tech-flash-<date>.md`（群发速览）**：自足的要点概览，读者不看周报即可掌握全部核心要点——全部选题按结论标签分三组，详略两档：导入条目 3 行（标题带日期/版本 + 是什么 + 对我们），观望/仅记录各一行；无表格、正文不内嵌链接、零新增事实；行文按「说给同事听」口径——行业黑话换日常词（基座化→成为默认模型、HITL 异步化→边干活边提问），短句直说；固定含「GitHub 本周热门」模块（3-5 个：周星增头部 + 方向代表，新建标「新建」，已并选题的不重复，首行一句本周风向）。默认落盘人工粘贴，webhook 推送见设计原则 5。
 - 按选题归并（模型判断），每选题：事实三元组 + 2-3 句简评 + **结论标签**：
   - **值得导入**——对团队当前项目可直接试用/采用
   - **值得观望**——方向重要，成熟度或适配未明，保持关注
@@ -57,6 +57,7 @@ run-weekly.sh（首版手动跑，1-2 期顺了再挂 cron）
 - folo 列表 agent-weekly：listId `1285748401379344384`；公众号 6 源走 `timeline --category "AI 公众号"`；解析坑：条目嵌套 `entries[].entries`。
 - 运行前提：folo 认证（`FOLO_TOKEN` 或 folocli login 存储态，实测后者已配好）；`gh` 已登录。
 - 待复核源已有结论（2026-09-12）：Databricks Blog、X @GeminiApp **都不加**。
+- L3 最终口径（2026-09-14 定，用户拍板「按官方界面轻量抓取，不用做的那么重」）：直接抓 `github.com/trending?since=weekly` 官方周榜页——1 次 curl + HTML 解析，约 25 条，周星增为 GitHub 官方口径；语义筛 Agent 相关 + 架构/能力级评估，画像细节可逐仓 `gh api repos` 补拉（≤10 次）。同日废弃两版重机制（「created > 窗口起点」纯新建口径；topic 搜索池 + 基线差分 + stargazers 走页的周星增近似），`trending-baseline.json` 已删除。已知边界：官方周榜只收大涨幅仓库，agent 长尾新星（百星级周增）进不了榜，接受。
 
 ## 运行载体（pi 评估结论，2026-09-12）
 

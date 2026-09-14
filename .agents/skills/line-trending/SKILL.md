@@ -1,65 +1,60 @@
 ---
 name: line-trending
-description: 周度 Agent 技术追踪系统的 L3 GitHub 潮流线：用 gh api search/repositories 找窗口期内新建且 stars 快涨的 Agent 相关项目，确定性降噪（排 awesome/template 类）后语义筛选，给入选项目画像并提名 L2（harness-digest）监控名单候选，落盘 raw/lines/trending-<日期>.md。当用户要跑 L3、潮流线、挖新兴 Agent 项目时使用。
+description: 周度 Agent 技术追踪系统的 L3 GitHub 潮流线：轻量抓取 GitHub Trending 官方周榜（github.com/trending?since=weekly，无官方 API，curl 抓页面解析），语义筛出 Agent 相关且价值高的项目，画像并提名 L2（harness-digest）监控名单候选，落盘 raw/lines/trending-<日期>.md。当用户要跑 L3、潮流线、看本周 GitHub 热门时使用。
 ---
 
-# line-trending — L3 GitHub 潮流线
+# line-trending — L3 GitHub 周榜（官方 Trending 页）
 
-职责：发现窗口期内冒头的 Agent 相关新项目，画像 + 提名进 L2 监控名单。窗口严格 7 天 [运行日−6, 运行日]，本地时区。
+职责：抓取 GitHub Trending 官方周榜，筛出 Agent 相关、价值高的项目，画像 + 提名进 L2 监控名单。口径 = 官方周榜（GitHub 自算的本周星增），不做本地推算。
 
-流程：① 检索 → ② 确定性降噪 → ③ 语义筛选与画像 → ④ 落盘。
+流程：① 抓取 → ② 语义筛选与画像 → ③ 落盘。保持轻量，不引入搜索池、基线、走页等本地机制。
 
-## ① 检索（配置区）
-
-窗口起点 = 运行日 − 6。star 门槛默认 30。topic 白名单逐个查询，结果按 `full_name` 合并去重：
+## ① 抓取（1 次 curl，无官方 API）
 
 ```bash
-gh api "search/repositories?q=created:>YYYY-MM-DD+stars:>=30+topic:agent&sort=stars&order=desc&per_page=30"
+curl -s "https://github.com/trending?since=weekly"
 ```
 
-- topic 白名单：`agent` / `ai-agent` / `llm` / `mcp` / `coding-agent`。
-- `gh` 未登录时退回 `curl "https://api.github.com/search/repositories?q=..."`（匿名限流 10 次/分，5 个查询在额度内）。
-- 结果为空：如实写空窗，不硬凑。GitHub trending 页无官方 API，不用。
-- 完成标准：白名单 5 个 topic 都查完，去重后的候选池在手上（或空窗结论）。
+- 服务端渲染页面，无登录无 Key，约 25 条。解析提示（实测可用）：
 
-## ② 确定性降噪
+  ```bash
+  grep -oE 'href="/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/stargazers"'   # 仓库名
+  grep -oE '[0-9,]+ stars this week'                              # 本周星增
+  ```
 
-python3 一行流（内联，非独立脚本）：
+  描述、语言、总星数等其余字段从 HTML 自行解析。
+- 抓取或解析失败（改版 / 网络）：如实写缺口退空窗，不硬凑，不用其他数据源替代。
+- 完成标准：本周榜单条目（仓库 + 本周星增 + 描述）在手，或缺口结论。
 
-- 按名称与描述排除：awesome / template / boilerplate / starter / course / list / resources / curated / 教程。
-- 剩余按 stars 降序取前 30。
+## ② 语义筛选与画像（模型判断）
 
-## ③ 语义筛选与画像（模型判断）
+- 相关性：与 Agent / harness / LLM / MCP 生态相关才入选；无关条目在「筛除」一行带过（数量 + 代表名字）。
+- 沿用「架构/能力级」口径：真实可用的项目 / 框架 / 工具，有差异化定位；纯 demo、套壳、教程仓库舍弃。
+- 每个入选项目画像四项：
+  - **定位**：一句话。
+  - **差异化**：与现有同类比新在哪。
+  - **活跃度**：本周星增为主；需要细节（总星数、created_at、commit、贡献者）可逐仓 `gh api repos/O/R` 补拉，**合计 ≤10 次调用**，窗口内创建的标〔新建〕。
+  - **风险**：单维护者、许可证缺失、公司背景不明等。
+- 每个入选项目回答：**是否值得提名进 L2（harness-digest）监控名单**。
 
-沿用「架构/能力级」口径：真实可用的 agent 项目 / 框架 / 工具，有差异化定位；纯 demo、套壳、教程仓库舍弃。
-
-每个入选项目画像四项：
-
-- **定位**：一句话。
-- **差异化**：与现有同类比新在哪。
-- **活跃度**：stars 数、近期提交频率、贡献者数。
-- **风险**：单维护者、许可证缺失、公司背景不明等。
-
-每个入选项目回答：**是否值得提名进 L2（harness-digest）监控名单**。
-
-## ④ 落盘 `raw/lines/trending-<date>.md`
+## ③ 落盘 `raw/lines/trending-<date>.md`
 
 产物契约（三线通用三节，D 处填实际日期）：
 
 ```markdown
 # L3 潮流线 · YYYY-MM-DD
 
-> 窗口：[D−6, D] · 检索：created:>D−6 + stars:>=30 + topic 白名单
+> 窗口：GitHub 官方周榜（since=weekly，抓取于 D）· 候选 <N> → 入选 <K>
 
 ## 事实条目
-- **<owner/repo>** ⭐<N> — <一句话定位> *纳入理由：…*（[创建 · 日期](repo URL)）
+- **<owner/repo>** 本周 +<N> 星〔新建〕— <一句话定位> *纳入理由：…*（[repo](URL)）
 
 ## 本线研判
-<一段话：本周新项目集中冒头的方向。>
+<一段话：本周榜单里 Agent 相关项目的方向。>
 
 ## 候选提名
 - **<owner/repo>** — 提名进 L2 监控名单：<一句话理由>
 ```
 
 - `<date>` = 运行日；`raw/lines/` 不存在则创建；同日第二份起文件名追加 `-2`。
-- 审计：stars / 创建日期 / URL 以 API 返回为准，不凭训练记忆补写。
+- 审计：周星增以页面为准，补拉数据以 API 返回为准，不凭训练记忆补写。
