@@ -60,7 +60,7 @@ run() {
 }
 
 run line-breadth     # L1 融合线 → raw/lines/breadth-<date>.md
-run harness-digest   # L2 深度线 → reports/agent-harness-brief-<date>.md
+run harness-digest   # L2 深度线 → raw/lines/agent-harness-brief-<date>.md
 run line-trending    # L3 潮流线 → raw/lines/trending-<date>.md
 run tracker-merge    # 合流     → reports/agent-tech-brief-<date>.md
 

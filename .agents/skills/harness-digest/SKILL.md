@@ -1,6 +1,6 @@
 ---
 name: harness-digest
-description: 抓取热门 Agent Harness（Hermes Agent、pi、OpenAI Codex、Claude Code）官方 GitHub 发布渠道在指定时间窗内的更新，语义筛选出 Agent 架构迭代与新能力发布（排除 bug 修复、小功能、交互调整），生成带来源标注的中文评估简报到 reports/。当用户想了解 coding agent / agent harness 的最新动态、要周报或简报、提到 harness 更新盘点、agent 新功能对比时使用——即使用户没说出 "harness-digest" 这个词。
+description: 抓取热门 Agent Harness（Hermes Agent、pi、OpenAI Codex、Claude Code）官方 GitHub 发布渠道在指定时间窗内的更新，语义筛选出 Agent 架构迭代与新能力发布（排除 bug 修复、小功能、交互调整），生成带来源标注的中文评估简报到 raw/lines/。当用户想了解 coding agent / agent harness 的最新动态、要周报或简报、提到 harness 更新盘点、agent 新功能对比时使用——即使用户没说出 "harness-digest" 这个词。
 ---
 
 # harness-digest — Agent Harness 更新简报
@@ -24,7 +24,7 @@ description: 抓取热门 Agent Harness（Hermes Agent、pi、OpenAI Codex、Cla
 
 - 默认最近 10 天，即 [运行日 − 9, 运行日]，本地时区。按周运行时与上期窗口重叠约 3 天，属刻意设计，处理方式见下条。
 - 用户传参则覆盖：接受日期区间（"2026-08-01 到 2026-08-15"）与相对说法（"最近两周"、"上个月"）。
-- 窗口与上期简报重叠属预期，重叠的目的是兜住上期边界附近漏收的版本。`reports/` 已有历史简报时，先读最近一份确认重叠区：已在上期正文展开过的版本不重复展开（列版本号带过即可），上期未收录、或日期归因有变的照常完整收录。用户显式指定窗口时照办。
+- 窗口与上期简报重叠属预期，重叠的目的是兜住上期边界附近漏收的版本。`raw/lines/` 已有历史简报时，先读最近一份确认重叠区：已在上期正文展开过的版本不重复展开（列版本号带过即可），上期未收录、或日期归因有变的照常完整收录。用户显式指定窗口时照办。
 - 时间窗写进简报头部；正文只收录发布时间落在窗内的版本。
 
 ## ② 抓取
@@ -69,7 +69,7 @@ curl -s "https://api.github.com/repos/earendil-works/pi/commits?path=packages/co
 
 ## ④ 撰写简报
 
-- 全文中文；写入 `reports/agent-harness-brief-YYYY-MM-DD.md`（YYYY-MM-DD 为运行日；`reports/` 不存在则创建；历史简报保留，不覆盖；同一运行日生成第二份时文件名追加 `-2`、`-3` 序号）。
+- 全文中文；写入 `raw/lines/agent-harness-brief-YYYY-MM-DD.md`（YYYY-MM-DD 为运行日；`raw/lines/` 不存在则创建；历史简报保留，不覆盖；同一运行日生成第二份时文件名追加 `-2`、`-3` 序号）。
 - 结构骨架（照此填内容）：
 
 ```markdown

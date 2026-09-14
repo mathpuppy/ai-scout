@@ -1,6 +1,6 @@
 ---
 name: tracker-merge
-description: 周度 Agent 技术追踪系统的合流段：读取三线当期落盘产物（raw/lines/breadth-*.md、raw/lines/trending-*.md、reports/agent-harness-brief-*.md），按选题归并出一份周报 reports/agent-tech-brief-<日期>.md（每选题给事实三元组、2-3 句简评和结论标签），并压缩出可群发的要点速览 reports/agent-tech-flash-<日期>.md。当用户要跑周度追踪的最后一段、合流三线产物、出周报或群发速览时使用。
+description: 周度 Agent 技术追踪系统的合流段：读取三线当期落盘产物（raw/lines/breadth-*.md、raw/lines/agent-harness-brief-*.md、raw/lines/trending-*.md），按选题归并出一份周报 reports/agent-tech-brief-<日期>.md（每选题给事实三元组、2-3 句简评和结论标签），并压缩出可群发的要点速览 reports/agent-tech-flash-<日期>.md。当用户要跑周度追踪的最后一段、合流三线产物、出周报或群发速览时使用。
 ---
 
 # tracker-merge — 三线合流出周报
@@ -14,7 +14,7 @@ description: 周度 Agent 技术追踪系统的合流段：读取三线当期落
 | 线 | 产物 |
 |---|---|
 | L1 融合线 | `raw/lines/breadth-<date>.md` |
-| L2 harness 线 | `reports/agent-harness-brief-<date>.md`（给人看的简报，直读） |
+| L2 harness 线 | `raw/lines/agent-harness-brief-<date>.md`（给人看的简报，直读） |
 | L3 潮流线 | `raw/lines/trending-<date>.md` |
 
 - 每条线取文件名日期**最新**的一份；三条线日期不一致照常运行，把实际读到的文件名写进周报头部。

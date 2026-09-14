@@ -16,7 +16,7 @@
 ```text
 run-weekly.sh（首版手动跑，1-2 期顺了再挂 cron）
   pi -p "/skill:line-breadth"     → raw/lines/breadth-<date>.md
-  pi -p "/skill:harness-digest"   → reports/agent-harness-brief-<date>.md（零改动）
+  pi -p "/skill:harness-digest"   → raw/lines/agent-harness-brief-<date>.md
   pi -p "/skill:line-trending"    → raw/lines/trending-<date>.md
   pi -p "/skill:tracker-merge"    → reports/agent-tech-brief-<date>.md
 ```
@@ -35,7 +35,7 @@ run-weekly.sh（首版手动跑，1-2 期顺了再挂 cron）
 | 线 | 职责 | 数据源 | 状态 |
 |---|---|---|---|
 | L1 融合线 | 本周事件全景 + 选题 | folo agent-weekly 列表 + folo 公众号 6 源 + aihot（window=7d）+ ai-radar（仅覆盖运行日前 24h，已知边界） | `.agents/skills/line-breadth/` |
-| L2 harness 深度线 | 4 个 harness 版本级深析 | GitHub API 直连（既有 SOP） | `.agents/skills/harness-digest/`，**真·零改动** |
+| L2 harness 深度线 | 4 个 harness 版本级深析 | GitHub API 直连（既有 SOP） | `.agents/skills/harness-digest/`，SOP 不变；产物路径 2026-09-13 起移至 `raw/lines/`（对齐线产物语义，reports/ 只放最终产物） |
 | L3 GitHub 潮流线 | 新兴热门 Agent 项目画像 + L2 监控名单提名 | `gh api search/repositories`（created > 窗口起点，stars 排序） | `.agents/skills/line-trending/` |
 
 - L1「重合即佐证」降级为提示词一句话：同一事件多个源都提 = 热度高，优先纳入。不是机制。
