@@ -59,9 +59,17 @@ run harness-digest   # harness 深度线 → raw/lines/agent-harness-brief-<date
 run line-trending    # GitHub 潮流线 → raw/lines/trending-<date>.md
 run tracker-merge    # 合流     → reports/agent-tech-brief-<date>.md
 
+# 群发速览渲染长图（增强产物：失败只告警不阻塞，无 flash md 或缺 node/playwright 时跳过）
+FLASH_MD="reports/agent-tech-flash-$(date +%F).md"
+if [ -f "$FLASH_MD" ] && command -v node >/dev/null 2>&1; then
+  echo "==> [render-flash] $(date '+%F %T')"
+  node scripts/render-flash.mjs "$FLASH_MD" \
+    || echo "警告：速览长图渲染失败（不影响 markdown 产物），可手动重跑：node scripts/render-flash.mjs $FLASH_MD" >&2
+fi
+
 # 滚动存档：成功结束后，非本期（日期非今日）的产物移入 .archives/weekly-reports/<今日>/（gitignored）
 TODAY=$(date +%F)
-for f in reports/*.md raw/lines/*.md; do
+for f in reports/*.md reports/*.png raw/lines/*.md; do
   [ -e "$f" ] || continue
   base=$(basename "$f" .md)
   if [[ $base =~ -([0-9]{4}-[0-9]{2}-[0-9]{2})(-[0-9]+)?$ ]]; then
