@@ -11,6 +11,7 @@
 #                 注意 auth.json 里已存的 key 优先级高于环境变量）
 #   PI_THINKING   思考档位（off/minimal/low/medium/high/xhigh/max）
 #   GH_TOKEN      gh 认证（或先 gh auth login；不配则潮流线补拉退匿名限流）
+#   FLASH_SCALE   速览长图倍率（默认 1x=750px 宽，企业 IM 友好；设 2 出 1500px 高清档）
 # 依赖：node/npx（pi 需要）、pi、python3、curl、hf（论文线：huggingface_hub CLI，免认证）
 #
 # 配置来源优先级（高到低）：命令行环境变量 > 仓库根 .env 文件 > pi 本机默认。
@@ -24,7 +25,7 @@ if [ -f .env ]; then
     _line="${_line%$'\r'}"
     case "$_line" in
       ''|\#*) continue ;;
-      PI_PROVIDER=*|PI_MODEL=*|PI_API_KEY=*|PI_THINKING=*|GH_TOKEN=*)
+      PI_PROVIDER=*|PI_MODEL=*|PI_API_KEY=*|PI_THINKING=*|GH_TOKEN=*|FLASH_SCALE=*))
         _key="${_line%%=*}" _val="${_line#*=}"
         case "$_val" in
           \"*\") _val="${_val#\"}"; _val="${_val%\"}" ;;

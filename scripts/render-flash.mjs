@@ -77,10 +77,12 @@ const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <style>${css}</style></head><body><div class="card"><div class="topbar"></div>${body.join('\n')}</div></body></html>`
 
 // ── 无头浏览器截长图 ──
+// 输出倍率：默认 1x（750px 宽，体积小，企业 IM 可直接预览）；FLASH_SCALE=2 出 1500px 高清档
+const SCALE = Math.min(4, Math.max(1, Number(process.env.FLASH_SCALE) || 1))
 const browser = await chromium.launch()
 const page = await browser.newPage({
   viewport: { width: 750, height: 1000 },
-  deviceScaleFactor: 2, // 2x 产出 1500px 宽，规避 IM 压缩模糊
+  deviceScaleFactor: SCALE,
 })
 await page.setContent(html, { waitUntil: 'networkidle' })
 const card = page.locator('.card')
