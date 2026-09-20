@@ -1,53 +1,146 @@
 /* agent-tech-flash 微信长图卡片样式 —— 750px 设计宽，2x 截图出 1500px */
 :root {
-  --bg: #f6f7f9;
   --card: #ffffff;
-  --text: #1f2328;
-  --muted: #57606a;
-  --accent: #4263eb;
-  --border: #e5e7eb;
-  --tag-bg: #eef1f6;
+  --ink: #16181d;              /* 主文字：近黑微蓝 */
+  --muted: #5d6470;            /* 次要文字 */
+  --faint: #9aa1ad;            /* 脚注 */
+  --accent: #4f46e5;           /* 主色：靛蓝 */
+  --accent-2: #7c6cf0;
+  --accent-3: #38bdf8;
+  --accent-ink: #3f3bbf;       /* 主色上的深文字 */
+  --accent-soft: #eef0fe;      /* 主色浅底 */
+  --surface: #f7f8fc;          /* 条目卡片底 */
+  --border: #e7eaf2;
+  --line: #eff1f7;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { background: var(--bg); }
+html, body { background: #e9ebf1; }
 body {
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
 .card {
   width: 750px;
-  padding: 48px 44px 40px;
+  padding: 0 56px 56px;
   background: var(--card);
 }
-h1 {
-  font-size: 40px;
-  font-weight: 700;
+/* 顶部品牌色带 */
+.topbar {
+  height: 10px;
+  margin: 0 -56px 48px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
+}
+/* 底部色带，与顶部呼应收尾 */
+.card::after {
+  content: "";
+  display: block;
+  height: 10px;
+  margin: 48px -56px -56px;
+  background: linear-gradient(90deg, var(--accent-3), var(--accent-2) 45%, var(--accent));
+}
+
+/* ── 大标题（文档第一行）── */
+.flash-title {
+  position: relative;
+  padding-bottom: 30px;
+  margin-bottom: 28px;
+  font-size: 46px;
+  font-weight: 800;
   line-height: 1.4;
-  color: var(--text);
-  padding-bottom: 28px;
-  margin-bottom: 32px;
-  border-bottom: 3px solid var(--border);
+  letter-spacing: 1px;
+  color: var(--ink);
 }
-/* 分组标题行：emoji 开头的短段落（👉 值得看 / 试） */
-p { font-size: 28px; line-height: 1.75; color: var(--text); margin-bottom: 20px; }
-p + ul { margin-top: -8px; }
-ul { list-style: none; margin-bottom: 32px; }
-li {
+.flash-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 96px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-3));
+}
+
+/* ── 导语（标题后第一段）── */
+.intro {
   font-size: 28px;
-  line-height: 1.7;
-  color: var(--text);
-  padding: 14px 0 14px 28px;
-  border-left: 6px solid var(--accent);
-  background: var(--tag-bg);
-  margin-bottom: 12px;
-  border-radius: 0 8px 8px 0;
+  line-height: 1.85;
+  color: var(--muted);
+  margin-bottom: 16px;
 }
-li + li { margin-top: 0; }
+
+/* ── 分组标题（emoji 开头的短行：👉 👀 🔥 📄 📋）── */
+.section {
+  display: inline-block;
+  margin: 46px 0 22px;
+  padding: 10px 24px;
+  font-size: 29px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border: 1px solid #dfe3fb;
+  border-radius: 999px;
+}
+
+/* ── 编号条目导语（1. 2. 3. …）── */
+.num {
+  font-size: 29px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 28px 0 4px;
+}
+.num .n { color: var(--accent); margin-right: 8px; }
+
+/* ── 正文段落 ── */
+p {
+  font-size: 28px;
+  line-height: 1.8;
+  color: var(--ink);
+  margin-bottom: 20px;
+}
+p + ul { margin-top: -6px; }
+
+/* ── 列表条目：轻卡片式 ── */
+ul { list-style: none; margin: 10px 0 8px; }
+li {
+  font-size: 27px;
+  line-height: 1.75;
+  color: var(--ink);
+  padding: 18px 24px 18px 26px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--accent);
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+li:last-child { margin-bottom: 0; }
+
 strong { font-weight: 700; }
 code {
   font-family: "SF Mono", Menlo, Consolas, monospace;
-  font-size: 26px;
-  background: var(--tag-bg);
-  padding: 2px 8px;
+  font-size: 24px;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 2px 10px;
   border-radius: 6px;
 }
+
+/* ── 页脚（最后一段出处说明）── */
+.foot {
+  margin-top: 46px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+  font-size: 24px;
+  line-height: 1.7;
+  color: var(--faint);
+  margin-bottom: 0;
+}
+
+/* ── 标准 markdown 标题兜底 ── */
+h1 { font-size: 40px; font-weight: 800; line-height: 1.4; color: var(--ink); margin: 48px 0 24px; }
+h2 { font-size: 32px; font-weight: 700; line-height: 1.5; color: var(--ink); margin: 40px 0 20px; }
+h3 { font-size: 29px; font-weight: 700; line-height: 1.5; color: var(--ink); margin: 32px 0 16px; }

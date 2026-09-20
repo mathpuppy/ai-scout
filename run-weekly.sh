@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 周度 Agent Harness 追踪 · 轻量版（设计见 docs/weekly-tracker-design.md）
-# 两线采集：harness 官方 release（Claude Code / Codex / Hermes / pi）+ GitHub 官方周榜。
+# 三线采集：harness 官方 release（Claude Code / Codex / Hermes / pi）+ GitHub 官方周榜 + HF Daily Papers 论文线。
 # 失败恢复：set -e 停在失败那条，手动重跑对应 pi 命令即可（产物落盘即检查点）。
 #
 # 迁移到新机器：clone 本仓库后备齐以下环境变量/依赖即可跑（LLM 项全部可选，
@@ -11,7 +11,7 @@
 #                 注意 auth.json 里已存的 key 优先级高于环境变量）
 #   PI_THINKING   思考档位（off/minimal/low/medium/high/xhigh/max）
 #   GH_TOKEN      gh 认证（或先 gh auth login；不配则潮流线补拉退匿名限流）
-# 依赖：node/npx（pi 需要）、pi、python3、curl
+# 依赖：node/npx（pi 需要）、pi、python3、curl、hf（论文线：huggingface_hub CLI，免认证）
 #
 # 配置来源优先级（高到低）：命令行环境变量 > 仓库根 .env 文件 > pi 本机默认。
 # .env 模板见 .env.example：复制为 .env 填写，.env 已 gitignore 不入库。
@@ -38,7 +38,7 @@ if [ -f .env ]; then
 fi
 unset _line _key _val
 
-mkdir -p raw/lines reports
+mkdir -p "raw/lines/$(date +%F)" "reports/$(date +%F)"
 
 # 技能白名单：只挂本仓库 .agents/skills，屏蔽 ~/.agents/skills 等全局目录
 SKILLS_DIR="$(pwd)/.agents/skills"
@@ -55,31 +55,32 @@ run() {
   pi "${PI_ARGS[@]}" "/skill:$1"
 }
 
-run harness-digest   # harness 深度线 → raw/lines/agent-harness-brief-<date>.md
-run line-trending    # GitHub 潮流线 → raw/lines/trending-<date>.md
-run tracker-merge    # 合流     → reports/agent-tech-brief-<date>.md
+run harness-digest   # harness 深度线 → raw/lines/<date>/agent-harness-brief-<date>.md
+run line-trending    # GitHub 潮流线 → raw/lines/<date>/trending-<date>.md
+run line-papers      # 论文线     → raw/lines/<date>/papers-<date>.md
+run tracker-merge    # 合流     → reports/<date>/agent-tech-brief-<date>.md
 
 # 群发速览渲染长图（增强产物：失败只告警不阻塞，无 flash md 或缺 node/playwright 时跳过）
-FLASH_MD="reports/agent-tech-flash-$(date +%F).md"
+FLASH_MD="reports/$(date +%F)/agent-tech-flash-$(date +%F).md"
 if [ -f "$FLASH_MD" ] && command -v node >/dev/null 2>&1; then
   echo "==> [render-flash] $(date '+%F %T')"
   node scripts/render-flash.mjs "$FLASH_MD" \
     || echo "警告：速览长图渲染失败（不影响 markdown 产物），可手动重跑：node scripts/render-flash.mjs $FLASH_MD" >&2
 fi
 
-# 滚动存档：成功结束后，非本期（日期非今日）的产物移入 .archives/weekly-reports/<今日>/（gitignored）
+# 滚动存档：成功结束后，非本期（目录名非今日）的 reports 与 raw/lines 子目录整目录移入
+# .archives/weekly-reports/<今日>/（gitignored），目录名加 lines-/reports- 前缀防撞
 TODAY=$(date +%F)
-for f in reports/*.md reports/*.png raw/lines/*.md; do
-  [ -e "$f" ] || continue
-  base=$(basename "$f" .md)
-  if [[ $base =~ -([0-9]{4}-[0-9]{2}-[0-9]{2})(-[0-9]+)?$ ]]; then
-    d=${BASH_REMATCH[1]}
-    if [ "$d" != "$TODAY" ]; then
+for base in reports raw/lines; do
+  for d in "$base"/*/; do
+    [ -e "$d" ] || continue
+    name=$(basename "$d")
+    if [[ $name =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(-[0-9]+)?$ && "$name" != "$TODAY" ]]; then
       mkdir -p ".archives/weekly-reports/$TODAY"
-      mv "$f" ".archives/weekly-reports/$TODAY/"
-      echo "==> 存档 $f"
+      mv "$d" ".archives/weekly-reports/$TODAY/$(basename "$base")-$name"
+      echo "==> 存档 $base/$name"
     fi
-  fi
+  done
 done
 
-echo "==> 完成 $(date '+%F %T') → reports/agent-tech-brief-$(date +%F).md"
+echo "==> 完成 $(date '+%F %T') → reports/$(date +%F)/agent-tech-brief-$(date +%F).md"

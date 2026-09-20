@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // render-flash.mjs — 把 agent-tech-flash-<date>.md 渲染成微信长图 PNG
-// 用法: node scripts/render-flash.mjs reports/agent-tech-flash-2026-09-20.md
+// 用法: node scripts/render-flash.mjs reports/2026-09-20/agent-tech-flash-2026-09-20.md
 // 依赖: playwright（npx 解析全局安装即可）+ 已下载的 chromium
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, resolve, basename } from 'node:path'
@@ -26,8 +26,22 @@ const lines = md.split('\n')
 const body = []
 let inList = false
 let para = []
-const flushPara = () => {
-  if (para.length) { body.push(`<p>${para.map(inline).join('<br>')}</p>`); para = [] }
+let pCount = 0
+const NUM_RE = /^\d+[.、)]\s/                       // 编号条目导语：1. / 2、/ 3)
+const EMOJI_RE = /^[\p{Extended_Pictographic}️‍]/u  // emoji 开头的短行视为分组标题
+const flushPara = (cls = '') => {
+  if (!para.length) return
+  pCount++
+  let klass = cls
+  if (!klass) {
+    if (pCount === 1) klass = 'flash-title'          // 文档第一段 = 大标题
+    else if (pCount === 2) klass = 'intro'           // 第二段 = 导语
+    else if (para.length === 1 && EMOJI_RE.test(para[0]) && para[0].length <= 40) klass = 'section'
+  }
+  let html = para.map(inline).join('<br>')
+  if (klass === 'num') html = html.replace(/^(\d+)([.、)])/, '<span class="n">$1$2</span>')
+  body.push(`<p${klass ? ` class="${klass}"` : ''}>${html}</p>`)
+  para = []
 }
 for (const raw of lines) {
   const line = raw.trimEnd()
@@ -42,6 +56,9 @@ for (const raw of lines) {
     flushPara(); if (inList) { body.push('</ul>'); inList = false }
     const level = line.match(/^#+/)[0].length
     body.push(`<h${level}>${inline(line.replace(/^#+\s*/, ''))}</h${level}>`)
+  } else if (NUM_RE.test(line)) {
+    if (inList) { body.push('</ul>'); inList = false }
+    flushPara(); para.push(line); flushPara('num')   // 编号导语独立成段，不与分组标题合并
   } else {
     if (inList) { body.push('</ul>'); inList = false }
     para.push(line)
@@ -49,10 +66,15 @@ for (const raw of lines) {
 }
 if (inList) body.push('</ul>')
 flushPara()
+// 最后一个无类名的段落视为页脚（出处说明）
+for (let i = body.length - 1; i >= 0; i--) {
+  if (body[i].startsWith('<p ')) break
+  if (body[i].startsWith('<p>')) { body[i] = body[i].replace('<p>', '<p class="foot">'); break }
+}
 
 const css = readFileSync(resolve(ROOT, 'scripts/flash-card.css'), 'utf8')
 const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
-<style>${css}</style></head><body><div class="card">${body.join('\n')}</div></body></html>`
+<style>${css}</style></head><body><div class="card"><div class="topbar"></div>${body.join('\n')}</div></body></html>`
 
 // ── 无头浏览器截长图 ──
 const browser = await chromium.launch()
