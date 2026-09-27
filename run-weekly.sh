@@ -25,7 +25,7 @@ if [ -f .env ]; then
     _line="${_line%$'\r'}"
     case "$_line" in
       ''|\#*) continue ;;
-      PI_PROVIDER=*|PI_MODEL=*|PI_API_KEY=*|PI_THINKING=*|GH_TOKEN=*|FLASH_SCALE=*))
+      PI_PROVIDER=*|PI_MODEL=*|PI_API_KEY=*|PI_THINKING=*|GH_TOKEN=*|FLASH_SCALE=*)
         _key="${_line%%=*}" _val="${_line#*=}"
         case "$_val" in
           \"*\") _val="${_val#\"}"; _val="${_val%\"}" ;;
