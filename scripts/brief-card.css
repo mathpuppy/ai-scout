@@ -1,0 +1,181 @@
+/* agent-tech-brief 周报长图 · 卡片周刊风 —— 750px 设计宽，1x 输出 */
+:root {
+  --card: #ffffff;
+  --ink: #191d27;              /* 主文字 */
+  --muted: #5b6472;            /* 次要文字 */
+  --faint: #9aa2b1;            /* 脚注 */
+  --surface: #f7f8fb;          /* 卡片底 */
+  --border: #e6e9f0;
+  --line: #eff1f6;
+  --accent: #4f46e5;           /* 品牌主色：靛蓝 */
+  --accent-2: #7c6cf0;
+  --accent-3: #38bdf8;
+  --accent-ink: #3f3bbf;
+  --accent-soft: #eef0fe;
+  /* 结论标签分色：值得看/试=绿、观望=琥珀、仅记录=灰、热门=橙 */
+  --go: #0d9f6e;    --go-soft: #e9f9f2;  --go-bd: #c9efe0;
+  --watch: #b45309; --watch-soft: #fdf4e5; --watch-bd: #f5dfba;
+  --log: #64748b;   --log-soft: #f1f4f8; --log-bd: #dde3ea;
+  --hot: #ea580c;   --hot-soft: #fef1e7; --hot-bd: #f9d9c2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: #e9ebf1; }
+body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.card {
+  width: 750px;
+  padding: 0 52px 48px;
+  background: var(--card);
+}
+/* 顶部渐变品牌带 */
+.topbar {
+  height: 12px;
+  margin: 0 -52px 44px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
+}
+
+/* ── 大标题 ── */
+.title {
+  position: relative;
+  padding-bottom: 24px;
+  margin-bottom: 26px;
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+.title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 92px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-3));
+}
+
+/* ── 本期大盘段落：浅底导语卡 ── */
+.para {
+  font-size: 26px;
+  line-height: 1.8;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 8px;
+}
+
+/* ── 分组标题徽章（按结论标签分色）── */
+.sec {
+  display: inline-block;
+  margin: 36px 0 18px;
+  padding: 9px 26px;
+  border-radius: 999px;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.5;
+  border: 1px solid;
+}
+.sec-go    { color: #047857; background: var(--go-soft);    border-color: var(--go-bd); }
+.sec-watch { color: #92400e; background: var(--watch-soft); border-color: var(--watch-bd); }
+.sec-log   { color: #475569; background: var(--log-soft);   border-color: var(--log-bd); }
+.sec-hot   { color: #c2410c; background: var(--hot-soft);   border-color: var(--hot-bd); }
+.sec-plain { color: var(--accent-ink); background: var(--accent-soft); border-color: #dfe3fb; }
+
+/* ── 值得看/试条目卡 ── */
+.entry {
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--go);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 20px 24px 22px;
+  margin-bottom: 16px;
+}
+.entry-watch { border-left-color: var(--watch); }
+.entry-log   { border-left-color: var(--log); }
+.entry h3 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.eul { list-style: none; }
+.eul li {
+  font-size: 26px;
+  line-height: 1.75;
+  color: var(--ink);
+  padding: 6px 0;
+}
+
+/* ── 一行条目卡（观望/仅记录/热门/其他动态）── */
+ul { list-style: none; }
+.ul-go li, .ul-watch li, .ul-log li, .ul-hot li, .ul-plain li {
+  font-size: 26px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 22px;
+  margin-bottom: 14px;
+}
+.ul-go li    { border-left: 5px solid var(--go); }
+.ul-watch li { border-left: 5px solid var(--watch); }
+.ul-log li   { border-left: 5px solid var(--log); }
+.ul-hot li   { border-left: 5px solid var(--hot); }
+.ul-plain li { border-left: 5px solid #c7cde0; color: var(--muted); font-size: 24px; }
+
+/* ── 是什么/怎么用/本周风向 键标签 ── */
+.key {
+  display: inline-block;
+  font-size: 21px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 2px 12px;
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+.k-what { background: var(--go-soft); color: #047857; }
+.k-how  { background: var(--accent-soft); color: var(--accent-ink); }
+.k-wind { background: var(--hot-soft); color: #c2410c; }
+
+/* ── 来源徽章〔harness / 潮流〕── */
+.src {
+  display: inline-block;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #eceff4;
+  border-radius: 6px;
+  padding: 1px 10px;
+  margin-left: 8px;
+  vertical-align: 2px;
+}
+
+strong { font-weight: 700; }
+code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 22px;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 1px 8px;
+  border-radius: 6px;
+}
+
+/* ── 页脚 ── */
+.foot {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 20px;
+  color: var(--faint);
+}
