@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ai-scout 周度追踪系统 · 核心架构</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;   /* white-smoke */
+      --color-ink:     #2d3142;   /* jet-black */
+      --color-muted:   #4f5d75;   /* blue-slate */
+      --color-accent:  #bf4520;   /* burnt-tangerine */
+      --font-sans:     'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', 'Noto Serif KR', 'Songti SC', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 960px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · ai-scout</p>
+    <h1>ai-scout 周度追踪系统 · 核心架构</h1>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ai-scout-architecture-title ai-scout-architecture-desc">
+        <title id="ai-scout-architecture-title">ai-scout 周度追踪系统核心架构</title>
+        <desc id="ai-scout-architecture-desc">run-weekly.sh 串行编排两线采集：GitHub 数据经 fetch-harness.py 预处理后由 harness-digest / line-trending 产出线产物，落盘 raw/lines 后由 tracker-merge 合流出一份周报，再经 render-brief.mjs 渲染为长图。</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <!-- Zone: orchestrator boundary (drawn before arrows and nodes) -->
+        <rect x="196" y="60" width="200" height="364" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+        <rect x="210" y="64" width="172" height="16" rx="2" fill="#f5f5f5"/>
+        <text x="296" y="76" fill="#5a6580" font-size="12" font-weight="500" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">RUN-WEEKLY.SH 串行编排</text>
+
+        <!-- Arrows (before nodes) -->
+        <!-- External fetches: link blue -->
+        <path d="M 180,120 H 216" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <path d="M 108,168 V 340 Q 108,348 116,348 H 216" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- fetch 摘要交接（脚本 → 技能） -->
+        <path d="M 296,168 V 216" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Line outputs to raw/lines: muted, fanned ports 252 / 372 -->
+        <path d="M 376,252 H 424" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+        <path d="M 376,372 H 400 Q 408,372 408,364 V 284 Q 408,276 416,276 H 424" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+        <!-- Focal handoff: line files into tracker-merge -->
+        <path d="M 564,252 H 596" fill="none" stroke="#bf4520" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+        <path d="M 748,252 H 776" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+        <!-- N1: GitHub (external) -->
+        <rect x="40" y="96" width="140" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="40" y="96" width="140" height="72" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+        <rect x="48" y="102" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+        <text x="62" y="111" fill="#5a6580" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+        <text x="110" y="128" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">GitHub</text>
+        <text x="110" y="144" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">Releases · CHANGELOG</text>
+        <text x="110" y="158" fill="#5a6580" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">trending?since=weekly</text>
+
+        <!-- N2: fetch-harness.py (preprocess script) -->
+        <rect x="216" y="96" width="160" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="216" y="96" width="160" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="224" y="102" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="242" y="111" fill="rgba(45,49,66,0.8)" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">SCRIPT</text>
+        <text x="296" y="128" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">fetch-harness.py</text>
+        <text x="296" y="144" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">5 harness · 窗口过滤</text>
+        <text x="296" y="160" fill="#4f5d75" font-size="12" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">截断 · 重试 · 缺口</text>
+
+        <!-- N4: harness-digest (backend / pi skill) -->
+        <rect x="216" y="216" width="160" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="216" y="216" width="160" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="224" y="222" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="242" y="231" fill="rgba(45,49,66,0.8)" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">SKILL</text>
+        <text x="296" y="248" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">harness-digest</text>
+        <text x="296" y="264" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">5 harness · 10d window</text>
+        <text x="296" y="280" fill="#4f5d75" font-size="12" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">架构 / 能力级筛选</text>
+
+        <!-- N5: line-trending (backend / pi skill) -->
+        <rect x="216" y="336" width="160" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="216" y="336" width="160" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="224" y="342" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+        <text x="242" y="351" fill="rgba(45,49,66,0.8)" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">SKILL</text>
+        <text x="296" y="368" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">line-trending</text>
+        <text x="296" y="384" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">weekly chart · gh api</text>
+        <text x="296" y="400" fill="#4f5d75" font-size="12" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">画像 + 监控名单提名</text>
+
+        <!-- N6: raw/lines (store) -->
+        <rect x="424" y="204" width="140" height="96" rx="6" fill="#f5f5f5"/>
+        <rect x="424" y="204" width="140" height="96" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <rect x="432" y="210" width="24" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+        <text x="444" y="219" fill="rgba(79,93,117,0.8)" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">FS</text>
+        <text x="494" y="244" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">线产物 · 落盘交接</text>
+        <text x="494" y="260" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">raw/lines/&lt;date&gt;/</text>
+        <text x="494" y="276" fill="#5a6580" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">2 lines + fetch 摘要</text>
+
+        <!-- N7: tracker-merge (focal) -->
+        <rect x="596" y="204" width="152" height="96" rx="6" fill="#f5f5f5"/>
+        <rect x="596" y="204" width="152" height="96" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.2"/>
+        <rect x="604" y="210" width="36" height="12" rx="2" fill="transparent" stroke="rgba(191,69,32,0.50)" stroke-width="0.8"/>
+        <text x="622" y="219" fill="rgba(191,69,32,0.8)" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">SKILL</text>
+        <text x="672" y="244" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">tracker-merge</text>
+        <text x="672" y="260" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">no network · audit</text>
+        <text x="672" y="276" fill="#4f5d75" font-size="12" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">轻归并 + 结论标签</text>
+
+        <!-- N8: reports (store) -->
+        <rect x="776" y="204" width="144" height="96" rx="6" fill="#f5f5f5"/>
+        <rect x="776" y="204" width="144" height="96" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <rect x="784" y="210" width="24" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+        <text x="796" y="219" fill="rgba(79,93,117,0.8)" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">FS</text>
+        <text x="848" y="244" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">周报 · 唯一产物</text>
+        <text x="848" y="260" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">reports/&lt;date&gt;/</text>
+        <text x="848" y="276" fill="#5a6580" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">brief.md → png 长图</text>
+
+        <!-- Editorial callout: tail steps kept off the node budget -->
+        <text x="480" y="472" fill="#4f5d75" font-size="14" font-style="italic" font-family="'Instrument Serif', 'Noto Serif', 'Songti SC', serif" text-anchor="middle">长图由 render-brief.mjs 渲染（卡片周刊风）；validate.sh 机检告警不阻塞；非本期产物滚动归档至 .archives/</text>
+
+        <!-- Legend strip -->
+        <line x1="30" y1="536" x2="930" y2="536" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+        <text x="30" y="556" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.14em">LEGEND</text>
+        <rect x="120" y="544" width="12" height="12" rx="2" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+        <text x="140" y="556" fill="#4f5d75" font-size="12" font-weight="500" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif">外部信源</text>
+        <rect x="224" y="544" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="244" y="556" fill="#4f5d75" font-size="12" font-weight="500" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif">技能 / 脚本</text>
+        <rect x="320" y="544" width="12" height="12" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <text x="340" y="556" fill="#4f5d75" font-size="12" font-weight="500" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif">文件产物</text>
+        <rect x="424" y="544" width="12" height="12" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1"/>
+        <text x="444" y="556" fill="#4f5d75" font-size="12" font-weight="500" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif">合流焦点</text>
+        <line x1="540" y1="550" x2="566" y2="550" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text x="574" y="556" fill="#4f5d75" font-size="12" font-weight="500" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif">外部抓取</text>
+        <line x1="664" y1="550" x2="690" y2="550" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+        <text x="698" y="556" fill="#4f5d75" font-size="12" font-weight="500" font-family="'Geist', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif">文件交接</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
