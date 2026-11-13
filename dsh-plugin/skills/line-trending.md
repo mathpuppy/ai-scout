@@ -7,8 +7,10 @@
 ## ① 抓取（1 次 curl，无官方 API）
 
 ```bash
-curl -s "https://github.com/trending?since=weekly"
+curl.exe -s "https://github.com/trending?since=weekly"
 ```
+
+> pwsh 下 `curl` 是 Invoke-WebRequest 别名，务必用 `curl.exe`；可先落盘再解析：`curl.exe -s "https://github.com/trending?since=weekly" -o raw/lines/<日期>/trending.html`。
 
 - 服务端渲染页面，无登录无 Key，约 25 条。解析提示（实测可用）：
 

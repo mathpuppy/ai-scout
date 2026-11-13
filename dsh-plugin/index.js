@@ -3,12 +3,17 @@
 // 注册 4 个运行时技能（harness-digest / line-trending / tracker-merge / tracker-weekly），
 // 并把本插件捆绑的脚本目录注入 shell 环境变量 DSH_TRACKER_SCRIPTS，供技能以绝对路径调用。
 // 总编排由 tracker-weekly 技能承担（替代原 run-weekly.sh 的 pi 驱动）。
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const scriptsDir = join(here, 'scripts')
+// 仓库根 .venv（uv 自建虚拟环境）里的 Python；不存在则退回 PATH 上的 python/python3。
+const venvPython =
+  process.platform === 'win32'
+    ? join(here, '..', '.venv', 'Scripts', 'python.exe')
+    : join(here, '..', '.venv', 'bin', 'python')
 
 export const inject = ['skills', 'shellEnv']
 
@@ -48,9 +53,20 @@ export function apply(ctx) {
           description:
             'ai-scout tracker 插件捆绑脚本目录（fetch-harness.py / render-brief.mjs / brief-card.css / validate.sh）',
         },
+        DSH_TRACKER_PYTHON: {
+          description:
+            '运行 fetch-harness.py 的 Python 解释器（优先仓库根 uv 自建 .venv，否则退回 PATH 上的 python/python3）',
+        },
       },
       resolve() {
-        return { DSH_TRACKER_SCRIPTS: scriptsDir }
+        return {
+          DSH_TRACKER_SCRIPTS: scriptsDir,
+          DSH_TRACKER_PYTHON: existsSync(venvPython)
+            ? venvPython
+            : process.platform === 'win32'
+              ? 'python'
+              : 'python3',
+        }
       },
     })
   )

@@ -4,6 +4,13 @@
 
 流程：① 定运行日与目录 → ② 依次执行三线 → ③ 渲染 + 机检 → ④ 滚动归档 → ⑤ 汇报。
 
+> **本机执行环境（Windows / PowerShell）**：Harness 的 shell 是 pwsh，不是 bash。下述 `bash` 代码块请用 pwsh 等价命令执行；如需原样跑 bash，本机 Git Bash 位于 `C:\Program Files\Git\bin\bash.exe`。要点：
+> - 环境变量：bash 的 `$DSH_TRACKER_SCRIPTS` / `$DSH_TRACKER_PYTHON` 在 pwsh 里写作 `$env:DSH_TRACKER_SCRIPTS` / `$env:DSH_TRACKER_PYTHON`。
+> - 日期：`TODAY=$(date +%F)` → `$TODAY = Get-Date -Format 'yyyy-MM-dd'`。
+> - 建目录：`mkdir -p a b` → `New-Item -ItemType Directory -Force a, b`。
+> - 写日志：清空用 `Set-Content -Path <file> -Value ''`，追加用 `Add-Content -Path <file> -Value '...'`。
+> - 抓取一律用 `curl.exe`（pwsh 的 `curl` 是 Invoke-WebRequest 别名）；Python 用 `$env:DSH_TRACKER_PYTHON`（本机 `python3` 是 Microsoft Store 占位符，不可用）。
+
 ## ① 定运行日与目录
 
 - 固定一次运行日 `TODAY`（本地日期），全程统一使用，防跨午夜漂移。
@@ -77,6 +84,6 @@ done
 
 ## 依赖与环境
 
-- 依赖：`curl`、`python3`（harness 抓取预处理）、`node`（长图渲染）；`gh` 可选（潮流线补拉，缺则告警退匿名限流）。长图渲染另需 chromium：`npx playwright install chromium`（首次渲染前装一次）。
+- 依赖：`curl.exe`、`$DSH_TRACKER_PYTHON`（harness 抓取预处理，uv 自建 .venv）、`node`（长图渲染）；`gh` 可选（潮流线补拉，缺则告警退匿名限流）。长图渲染另需 chromium：`npx playwright install chromium`（首次渲染前装一次）。
 - `GH_TOKEN`（gh 认证，可选）与 `FLASH_SCALE`（长图倍率）由环境变量提供；无需 pi 相关变量。
 - 脚本目录由插件注入的环境变量 `$DSH_TRACKER_SCRIPTS` 提供，调用脚本一律用它拼绝对路径。

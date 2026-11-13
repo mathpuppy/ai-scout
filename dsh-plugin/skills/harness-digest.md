@@ -27,11 +27,13 @@
 
 模型**不直接 curl 原始数据**，先跑预处理脚本（脚本由 ai-scout 插件提供，绝对路径在环境变量 $DSH_TRACKER_SCRIPTS；在项目根执行，产物落盘路径相对 cwd）：
 
+> pwsh 下环境变量写作 `$env:DSH_TRACKER_PYTHON` / `$env:DSH_TRACKER_SCRIPTS`，Python 用 `$env:DSH_TRACKER_PYTHON`（本机 `python3` 是 Microsoft Store 占位符，不可用）；兜底 curl 一律用 `curl.exe`（pwsh 的 `curl` 是 Invoke-WebRequest 别名）。
+
 ```bash
-python3 "$DSH_TRACKER_SCRIPTS/fetch-harness.py" <窗口起点> <窗口终点> raw/lines/<运行日>/harness-fetch.md
+"$DSH_TRACKER_PYTHON" "$DSH_TRACKER_SCRIPTS/fetch-harness.py" <窗口起点> <窗口终点> raw/lines/<运行日>/harness-fetch.md
 ```
 
-脚本确定性完成以下工作（python3 标准库，零新依赖；api.github.com 共 4 次调用，匿名 60 次/小时额度内，重试翻倍也在额度内；raw.githubusercontent.com 不占额度）：
+脚本确定性完成以下工作（Python 标准库，零新依赖；api.github.com 共 4 次调用，匿名 60 次/小时额度内，重试翻倍也在额度内；raw.githubusercontent.com 不占额度）：
 
 - 五个渠道抓取 + 重试：不可达退避重试、403/429 等 60 秒再试、大文件断流续传，仍失败写「缺口」。
 - 规则过滤：Codex 只留稳定版（prerelease=false && draft=false）；DeepSeek 只剔 draft（prerelease 照收，alpha/rc 双轨并列）；Hermes 剔 draft。
@@ -43,11 +45,11 @@ python3 "$DSH_TRACKER_SCRIPTS/fetch-harness.py" <窗口起点> <窗口终点> ra
 兜底命令（脚本失败、或某条正文被截断需要全文判断时，单独补拉；注意 Codex 端点响应大、偶发 504，用 per_page=15）：
 
 ```bash
-curl -s "https://api.github.com/repos/NousResearch/hermes-agent/releases?per_page=30"
-curl -s "https://api.github.com/repos/openai/codex/releases?per_page=15"
-curl -s "https://api.github.com/repos/deepseek-ai/deepseek-harness/releases?per_page=30"
-curl -s "https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md"
-curl -s "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/CHANGELOG.md"
+curl.exe -s "https://api.github.com/repos/NousResearch/hermes-agent/releases?per_page=30"
+curl.exe -s "https://api.github.com/repos/openai/codex/releases?per_page=15"
+curl.exe -s "https://api.github.com/repos/deepseek-ai/deepseek-harness/releases?per_page=30"
+curl.exe -s "https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md"
+curl.exe -s "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/CHANGELOG.md"
 ```
 
 日期归因规则：

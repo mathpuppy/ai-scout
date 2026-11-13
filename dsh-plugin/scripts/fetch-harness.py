@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""fetch-harness.py — harness-digest 抓取预处理器（python3 标准库，零新依赖）
+"""fetch-harness.py — harness-digest 抓取预处理器（Python 标准库，零新依赖）
 
-用法: python3 fetch-harness.py <窗口起点> <窗口终点> [输出文件]
+用法: python fetch-harness.py <窗口起点> <窗口终点> [输出文件]
 
 职责：抓取 5 个 harness 官方发布渠道，按窗口（本地时区，含端点）过滤，按各渠道规则过滤
 （Codex 只留稳定版 prerelease=false && draft=false；DeepSeek 只剔 draft、prerelease 照收；
