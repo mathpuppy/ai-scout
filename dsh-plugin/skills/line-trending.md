@@ -1,8 +1,3 @@
----
-name: line-trending
-description: 周度 Agent Harness 追踪的 GitHub 潮流线：轻量抓取 GitHub Trending 官方周榜（github.com/trending?since=weekly，无官方 API，curl 抓页面解析），语义筛出 Agent 相关且价值高的项目，画像并提名 harness-digest 监控名单候选，落盘 raw/lines/<日期>/trending-<日期>.md。当用户要跑潮流线、看本周 GitHub 热门时使用。
----
-
 # line-trending — GitHub 周榜（官方 Trending 页）
 
 职责：抓取 GitHub Trending 官方周榜，筛出 Agent 相关、价值高的项目，画像 + 提名进 harness-digest 监控名单。口径 = 官方周榜（GitHub 自算的本周星增），不做本地推算。

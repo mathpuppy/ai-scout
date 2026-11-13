@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // render-brief.mjs — 把 agent-tech-brief-<date>.md 渲染成周报长图 PNG（卡片周刊风）
-// 用法: node scripts/render-brief.mjs reports/2026-11-06/agent-tech-brief-2026-11-06.md
+// 用法: node render-brief.mjs reports/2026-11-06/agent-tech-brief-2026-11-06.md
 // 依赖: playwright（npx 解析全局安装即可）+ 已下载的 chromium
 // 结构契约见 tracker-merge 技能④：四个 emoji 分组标题按关键词分色；「## 出处」节不画入图内。
 import { readFileSync, mkdirSync } from 'node:fs'
@@ -11,7 +11,7 @@ import { chromium } from 'playwright'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const mdPath = resolve(process.argv[2] ?? '')
 if (!mdPath.endsWith('.md')) {
-  console.error('用法: node scripts/render-brief.mjs <brief.md 路径>')
+  console.error('用法: node render-brief.mjs <brief.md 路径>')
   process.exit(1)
 }
 const md = readFileSync(mdPath, 'utf8')

@@ -1,8 +1,3 @@
----
-name: harness-digest
-description: 抓取热门 Agent Harness（Hermes Agent、pi、OpenAI Codex、Claude Code、DeepSeek Harness）官方 GitHub 发布渠道在指定时间窗内的更新，语义筛选出 Agent 架构迭代与新能力发布（排除 bug 修复、小功能、交互调整），生成带来源标注的中文评估简报到 raw/lines/<运行日>/。当用户想了解 coding agent / agent harness 的最新动态、要周报或简报、提到 harness 更新盘点、agent 新功能对比时使用——即使用户没说出 "harness-digest" 这个词。
----
-
 # harness-digest — Agent Harness 更新简报
 
 抓取固定名单内 Agent Harness 的官方 GitHub 发布渠道，筛出"架构迭代 / 新能力"级别的更新，产出中文评估简报。定位为**一周运行一次的周度分析任务**：默认窗口从 `min(运行日 − 9, 最新一期简报运行日)` 到运行日，刻意比周间隔多出约 3 天，用窗口重叠兜住边界附近的遗漏；上期距今超 9 天（漏跑）时窗口自动前伸补洞。
@@ -30,10 +25,10 @@ description: 抓取热门 Agent Harness（Hermes Agent、pi、OpenAI Codex、Cla
 
 ## ② 抓取（scripts/fetch-harness.py 预处理 → 紧凑摘要）
 
-模型**不直接 curl 原始数据**，先跑仓库预处理脚本（在仓库根执行；run-weekly.sh 已在仓库根）：
+模型**不直接 curl 原始数据**，先跑预处理脚本（脚本由 ai-scout 插件提供，绝对路径在环境变量 $DSH_TRACKER_SCRIPTS；在项目根执行，产物落盘路径相对 cwd）：
 
 ```bash
-python3 scripts/fetch-harness.py <窗口起点> <窗口终点> raw/lines/<运行日>/harness-fetch.md
+python3 "$DSH_TRACKER_SCRIPTS/fetch-harness.py" <窗口起点> <窗口终点> raw/lines/<运行日>/harness-fetch.md
 ```
 
 脚本确定性完成以下工作（python3 标准库，零新依赖；api.github.com 共 4 次调用，匿名 60 次/小时额度内，重试翻倍也在额度内；raw.githubusercontent.com 不占额度）：

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # validate.sh — 周报产物轻量机检（告警不阻塞主流程；退出码非 0 即"有告警，建议人工复核"）
 # 检查项：线产物存在与结构、周报存在、分组结构与条目三件行、出处附录、URL 可溯源到 raw 产物。
-# 用法: scripts/validate.sh [运行日，默认今天]
+# 用法: scripts/validate.sh [运行日，默认今天] [项目根，默认当前工作目录]
 set -uo pipefail
 
 DATE="${1:-$(date +%F)}"
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="${2:-$PWD}"
 cd "$ROOT"
 
 RAW="raw/lines/$DATE"

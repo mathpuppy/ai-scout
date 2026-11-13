@@ -104,3 +104,12 @@ run-weekly.sh（手动跑；口径稳定后可挂 cron）
 - **合流产物合并为一份**（用户拍板：「本质上只要一份就行了」）：砍 brief/flash 双产物，`tracker-merge` 只产出 `agent-tech-brief-<date>.md`——按结论标签分三组的自足周报（值得看/试 3 行、观望/仅记录 1 行、本周热门、其他动态、出处附录），正文不内嵌链接（链接集中出处附录，渲染不画入图内）。`run-weekly.sh` 去 flash 渲染分支改渲染周报本身；`render-flash.mjs` / `flash-card.css` 改名重做为 `render-brief.mjs` / `brief-card.css`；validate.sh 机检项改（分组结构、条目三件行、出处、URL 溯源）。
 - **轻归并 + 条目预算**（用户拍板）：砍跨线归并后条目直出会膨胀（实测 10-25 期输入 harness 24 条更新 + 潮流 17 条，直出条目远超 IM 舒适长度），加单 harness 内轻归并（同类更新合条、能力级单独成条、多候选版本取最新，每 harness 最多 2-3 条）+ 三组合计 10-12 条预算，超出降档「其他动态」一行。
 - **长图视觉改版（卡片周刊风）**（用户拍板：「图片格式简陋，不太让人有读下去的欲望」）：渐变横幅 + 彩色分组标题徽章 + 结论标签分色条目卡（绿=值得看/试、琥珀=值得观望、灰=仅记录、橙=本周热门）+ 是什么/怎么用键标签 + 来源徽章；出处附录不画入图内。
+
+## v3.4 → v3.5 改造记录（2026-11-13）
+
+- **运行载体迁移：pi → DeepSeek Harness 原生驱动**（用户拍板）：删除 `.agents/skills/`（三条技能）与 `run-weekly.sh`（pi 驱动的顺序编排），新增 `dsh-plugin/`——一个可安装进 DSH 的插件 bundle（`package.json` + `cordis.patch.yml` + `index.js`），在 `apply` 里用 `ctx.effect` 注册四条 runtime 技能（`harness-digest` / `line-trending` / `tracker-merge` / 新增 `tracker-weekly`），并注入 `shellEnv` 变量 `DSH_TRACKER_SCRIPTS`（脚本目录绝对路径）。
+- **总编排 DSH 化**：原 `run-weekly.sh` 的「定运行日/建目录 → 顺序跑三线 → 渲染+机检 → 滚动归档 → 汇报」逻辑迁入 `tracker-weekly` 技能，驱动者是 DSH 自己——用 `skill` 工具依次加载三线，每线产物落盘即检查点、追加 `run.log`；渲染（`render-brief.mjs`）与机检（`validate.sh`）失败只告警不阻塞；非本期目录滚动归档逻辑（`.archives/weekly-reports/<today>/`，`lines-`/`reports-` 前缀）原样保留。
+- **脚本打包进插件**：`scripts/`（`fetch-harness.py` / `render-brief.mjs` / `brief-card.css` / `validate.sh`）复制进 `dsh-plugin/scripts/`；技能内引用从 `scripts/<脚本>` 改为 `"$DSH_TRACKER_SCRIPTS/<脚本>"`；`validate.sh` 的项目根定位从「脚本上一级」改为「默认 `$PWD`（DSH shell 在项目根执行），第 2 参数可覆盖」。
+- **技能登记去 frontmatter**：原 `.agents/skills/*/SKILL.md` 的 YAML frontmatter（name/description）迁入 `index.js` 的 `SKILLS` 数组作为注册字段，技能正文只保留 Markdown 内容。同名 runtime 技能与项目技能并存时项目技能优先，故删除 `.agents/skills/` 使插件成为唯一事实来源。
+- **配置契约简化**：`.env` 白名单只保留 `GH_TOKEN` / `FLASH_SCALE`（去掉 `PI_PROVIDER`/`PI_MODEL`/`PI_API_KEY`/`PI_THINKING`）；`tracker-weekly` 启动时加载仓库根 `.env`（已导出同名变量优先，与原优先级一致）。`.agents/AGENTS.md` 去掉 pi Context7 规则，改指 DSH 插件用法。
+- **已知边界**：`playwright` 依赖经 `node_modules` 向上解析——插件位于本仓库内时能解析到仓库 `node_modules`；被复制/打包到 DSH profile 目录后需另行安装 playwright（渲染失败只告警不阻塞）。`python3`/`curl`/`bash [[ ]]`/`date +%F` 假定 bash 兼容 shell（Windows 用 Git Bash / WSL）。

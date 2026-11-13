@@ -1,13 +1,8 @@
----
-name: tracker-merge
-description: 周度 Agent Harness 追踪的合流段：读取两线当期落盘产物（raw/lines/<日期>/agent-harness-brief-<日期>.md、raw/lines/<日期>/trending-<日期>.md），单线内轻归并成一份周报 reports/<日期>/agent-tech-brief-<日期>.md——按结论标签分三组（值得看/试、值得观望、仅记录），值得看/试条目三件行（是什么/怎么用），文末出处附录集中列链接，可群发也可渲染长图。当用户要跑周度追踪的最后一段、合流两线产物、出周报时使用。
----
-
 # tracker-merge — 两线合流出一份周报
 
 把两条采集线已落盘的产物归并成**一份**周报：给人看、可群发、可渲染长图。全程只读输入文件，本技能不发起任何网络请求——周报里的事实全部来自产物，判断是唯一的新增内容。不做跨线归并：两线事实基本不相交，同一项目被两线点名时各按本线口径写条目。
 
-长图渲染不在本技能内：`run-weekly.sh` 末尾调 `scripts/render-brief.mjs` 把周报渲染成 PNG，本技能只需保证产物符合④的结构契约。
+长图渲染不在本技能内：总编排（tracker-weekly）在本技能完成后调 `$DSH_TRACKER_SCRIPTS/render-brief.mjs` 把周报渲染成 PNG，本技能只需保证产物符合④的结构契约。
 
 流程：① 定位产物 → ② 归并与撰写 → ③ 落盘与审计。
 
@@ -83,4 +78,4 @@ description: 周度 Agent Harness 追踪的合流段：读取两线当期落盘�
 
 - 分组标题固定四个 emoji 标题（措辞照骨架，渲染器按关键词分色）；「出处」节以 `## 出处` 开头（渲染器自动跳过，不画入图内）。
 - 值得看/试条目必须 `### 标题` + 两个 `- 是什么：` / `- 怎么用：` 行；观望/仅记录/热门/其他动态用 `- ` 行。
-- 渲染由 `run-weekly.sh` 调 `scripts/render-brief.mjs` 完成（卡片周刊风），失败只告警不阻塞。
+- 渲染由总编排 tracker-weekly 调 `$DSH_TRACKER_SCRIPTS/render-brief.mjs` 完成（卡片周刊风），失败只告警不阻塞。

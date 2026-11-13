@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """fetch-harness.py — harness-digest 抓取预处理器（python3 标准库，零新依赖）
 
-用法: python3 scripts/fetch-harness.py <窗口起点> <窗口终点> [输出文件]
+用法: python3 fetch-harness.py <窗口起点> <窗口终点> [输出文件]
 
 职责：抓取 5 个 harness 官方发布渠道，按窗口（本地时区，含端点）过滤，按各渠道规则过滤
 （Codex 只留稳定版 prerelease=false && draft=false；DeepSeek 只剔 draft、prerelease 照收；
@@ -223,7 +223,7 @@ def main():
     gaps = []
     parts = [
         f"# Harness 抓取摘要 · 窗口 {start} ～ {end}（本地时区）",
-        f"> scripts/fetch-harness.py 生成于 {datetime.now():%Y-%m-%d %H:%M} · 正文已截断（release {RELEASE_CLIP} 字 / CHANGELOG {CHANGELOG_CLIP} 字）· 需全文按兜底 curl 补拉",
+        f"> fetch-harness.py 生成于 {datetime.now():%Y-%m-%d %H:%M} · 正文已截断（release {RELEASE_CLIP} 字 / CHANGELOG {CHANGELOG_CLIP} 字）· 需全文按兜底 curl 补拉",
         "",
         releases_section("Hermes Agent", "NousResearch/hermes-agent", 30,
                          lambda r: not r.get("draft"), start, end, gaps),
