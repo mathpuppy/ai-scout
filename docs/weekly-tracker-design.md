@@ -1,6 +1,6 @@
 # 周度 Agent Harness 追踪系统 · 设计笔记（轻量版）
 
-> 状态：v3.4（2026-11-06，合流产物合并为一份 + 轻归并条目预算 + 长图改卡片周刊风，记录见文末）
+> 状态：v3.6（2026-11-14，周报 md 密度加大 + 图面首句语义，记录见文末）
 > 定位：一周一次的**信息聚合器 + 筛选评估**，做两件事——五大 harness 官方 release 的主要功能更新盘点 + GitHub 官方周榜的 Agent 相关项目筛选。纳入标准一句话：**技术有价值、够趋势 → 进周报**。不做情报融合、不做交叉验证、不做佐证计数。
 > 版本关系：v2.2 全量版（含 folo/aihot/ai-radar 聚合线）见 git 历史；现行为轻量版，砍掉全部聚合器信源，零第三方服务依赖。
 
@@ -16,14 +16,14 @@
 ## 总体架构
 
 ```text
-run-weekly.sh（手动跑；口径稳定后可挂 cron）
-  pi -p "/skill:harness-digest"   → raw/lines/<date>/agent-harness-brief-<date>.md
-  pi -p "/skill:line-trending"    → raw/lines/<date>/trending-<date>.md
-  pi -p "/skill:tracker-merge"    → reports/<date>/agent-tech-brief-<date>.md
-  node scripts/r` → reports/<date>/agent-tech-brief-<date>.png（一页信息图，增强产物）
+tracker-weekly（DSH 技能编排，插件注册，见 dsh-plugin/）
+  skill: harness-digest  → raw/lines/<date>/agent-harness-brief-<date>.md
+  skill: line-trending   → raw/lines/<date>/trending-<date>.md
+  skill: tracker-merge   → reports/<date>/agent-tech-brief-<date>.md
+  render-onepage.mjs     → reports/<date>/agent-tech-brief-<date>.png（一页信息图，默认交付物）
 ```
 
-失败恢复 = `./run-weekly.sh --from <skill>` 断点重跑（--from 之前已落盘的线跳过）；每线产物落盘即检查点，运行日志在 `raw/lines/<date>/run.log`。
+失败恢复 = 对 DSH 说「从 <skill> 继续」断点重跑（--from 之前已落盘的线跳过）；每线产物落盘即检查点，运行日志在 `raw/lines/<date>/run.log`。
 
 ## 窗口口径
 
@@ -45,10 +45,10 @@ run-weekly.sh（手动跑；口径稳定后可挂 cron）
 ## 合流段（tracker-merge → 一份周报 + 一页信息图）
 
 - 输入：两份当期产物，各取文件名日期最新一份；缺哪条线就跳过并标注，**merge 自身零网络请求**，事实只能来自输入文件。
-- 唯一产物 **`reports/<date>/agent-tech-brief-<date>.md`**（2026-11-06 起 brief/flash 双产物合并为一份，用户拍板）：自足、可群发、可渲染一页信息图。结构 = 标题（窗口日期）→ 本期大盘 1-2 句 → 按结论标签分三组（值得看/试、值得观望、仅记录，空组写「无」）→ 本周热门 → 其他动态 → 出处附录。
+- 唯一产物 **`reports/<date>/agent-tech-brief-<date>.md`**（2026-11-06 起 brief/flash 双产物合并为一份，用户拍板）：自足、可群发、可渲染一页信息图。结构 = 标题（窗口日期）→ 本期大盘 2-4 句 → 按结论标签分三组（值得看/试、值得观望、仅记录，空组写「无」）→ 本周热门 → 其他动态 → 出处附录。
 - **条目化与轻归并（只做单线、单 harness 内，不做跨线归并）**：harness 线同一 harness 同类更新合一条（多个 patch 合成「八连发」式）、架构/能力级单独成条、同一功能多候选版本只取最新一条，每 harness 最多 2-3 条；潮流线有价值项目出条目 ≤4 条、其余进「本周热门」清单。**条目预算三组合计约 10-12 条**（实测 10-25 期输入 harness 24 条 + 潮流 17 条，直出条目远超 IM 舒适长度），超出降档进「其他动态」一行（只列版本号/项目名）。
-- 详略两档：值得看/试条目 3 行（标题带日期/版本 → 是什么 → 怎么用），观望/仅记录各 1 行；**正文不内嵌链接**（链接集中出处附录，逐条对应）；行文按「说给同事听」口径——行业黑话换日常词（基座化→成为默认模型、HITL 异步化→边干活边提问），短句直说。默认落盘人工粘贴，webhook 推送见设计原则 6。
-- **周报长图（2026-11-06 改版，卡片周刊风）**：`run-weekly.sh` 末尾调 `scripts/r``（playwright 无头 chromium）把周报渲染成同目录 `agent-tech-brief-<date>.png`（750px 设计宽，默认 1x 输出、`FLASH_SCALE=2` 出 1500px 高清档；样式在 `scripts/brief-card.css`：渐变横幅、彩色分组标题徽章、结论标签分色条目卡——绿=值得看/试、琥珀=观望、灰=仅记录、橙=热门、是什么/怎么用键标签；出处附录不画入图内）。渲染失败只告警不阻塞（图片是增强产物）。选型记录：IM 图片通道只收位图（SVG 只能当文件发），故走 markdown → HTML → 无头浏览器截长图；satori/Takumi 代码级渲染需自备中文字体且要写结构化模板，doocs/md 只出富文本不出图，均已否。
+- 详略分层（2026-11-14 起按「首句成卡 + 后续句展开」写，用户拍板「brief 的报告内容过于简短，可以适当丰富下细节」）：值得看/试条目三件行（标题带日期/版本 → 是什么 2-4 句 → 怎么用 1-2 句），观望/仅记录每条 1 行起（1-2 句），热门每条 1-2 句，其他动态版本后括注覆盖点；**条目数不膨胀、每条写透**，后续句只从输入产物取材（纳入理由 / 其他动态 / 横向趋势 / 本线研判 / 候选提名都别浪费）；**正文不内嵌链接**（链接集中出处附录，逐条对应）；行文按「说给同事听」口径——行业黑话换日常词（基座化→成为默认模型、HITL 异步化→边干活边提问），短句直说。默认落盘人工粘贴，webhook 推送见设计原则 6。
+- **周报长图（2026-11-06 改版，卡片周刊风）**：`run-weekly.sh` 末尾调 `scripts/render-brief.mjs`（playwright 无头 chromium）把周报渲染成同目录 `agent-tech-brief-<date>.png`（750px 设计宽，默认 1x 输出、`FLASH_SCALE=2` 出 1500px 高清档；样式在 `scripts/brief-card.css`：渐变横幅、彩色分组标题徽章、结论标签分色条目卡——绿=值得看/试、琥珀=观望、灰=仅记录、橙=热门、是什么/怎么用键标签；出处附录不画入图内）。渲染失败只告警不阻塞（图片是增强产物）。选型记录：IM 图片通道只收位图（SVG 只能当文件发），故走 markdown → HTML → 无头浏览器截长图；satori/Takumi 代码级渲染需自备中文字体且要写结构化模板，doocs/md 只出富文本不出图，均已否。
 - **一页信息图（2026-11-14 改版，五家矩阵）**：默认交付物由滚动长图改为**定比单页**——`render-onepage.mjs` + `brief-onepage.css` 出 `agent-tech-brief-<date>.png`（1080×1440，3:4）。触发原因（用户拍板：「长图的模式不适合最终的阅读，真实的阅读体验不够好」）：旧长图 750×6498（1:8.66，手机上 4 屏多、IM 缩略图里正文等效 ~7px），且 17 条同字号同级、无 5 秒扫描层。改版要点：① 定比画布（固定 1440px 高，绝不拉伸）；② **双层字号**（大字号速览层 + 小字号细读层，缩略图也能认出本期骨架）；③ **内容减法**——按家名把条目聚合成「五家 harness × 本期关键动作」矩阵，有值得看/试的家展开「怎么用」一行，观望/仅记录压成底部 chip 云，算法派生「性质」列（▲可试/◆观望/·记录 + 能力/实验/维护/配置/分发/形态），其他动态只计版本数；④ 本周黑马用星增条形替代文字列表；⑤ **溢出检测 + 阶梯降级**（星增条 5→3、收 chip、字号逐档 −2%，共 8 档），全档仍溢出才裁切并大声告警（退出码 2），绝不静默裁切。旧长图保留为 `render-brief.mjs` → `-full.png`（需全量细节时显式调用）。矩阵里的家名/性质/星增均由周报 Markdown 自动派生，**md 仍是唯一事实来源**，不新增字段。
 
 - **一页信息图 v2：两块版式**（2026-11-14 同日返工，用户拍板：「信息更密集丰富一些，维持两个板块：harness 追踪、GitHub 潮流，每个板块的内容要点至少丰富一些，不要让人只看个标题然后不知所云」）：v1 把潮流条目当成矩阵第 6 行、又把观望/记录压成只剩名字的 chip 云，信息密度低。v2 改为**按条目的 〔harness〕/〔潮流〕 标签分板**（标签本就写在周报里，无需新增字段，匹配不到家名的兜底归潮流板）：① Harness 追踪——每行给「本期动作 + 是什么」正文，观望/仅记录降为同行「另：…（观望）」注脚；② GitHub 潮流——星增主榜每条带一句话说明，下接「生态看点」（带星数徽章与怎么用）。随之删掉 chip 云与「五家矩阵」的混排行。阶梯降级改为「先压正文行数 → 再删榜尾条目 → 最后整页缩字号」。
@@ -106,15 +106,21 @@ run-weekly.sh（手动跑；口径稳定后可挂 cron）
 
 ## v3.3 → v3.4 改造记录（2026-11-06）
 
-- **合流产物合并为一份**（用户拍板：「本质上只要一份就行了」）：砍 brief/flash 双产物，`tracker-merge` 只产出 `agent-tech-brief-<date>.md`——按结论标签分三组的自足周报（值得看/试 3 行、观望/仅记录 1 行、本周热门、其他动态、出处附录），正文不内嵌链接（链接集中出处附录，渲染不画入图内）。`run-weekly.sh` 去 flash 渲染分支改渲染周报本身；`render-flash.mjs` / `flash-card.css` 改名重做为 `r`` / `brief-card.css`；validate.sh 机检项改（分组结构、条目三件行、出处、URL 溯源）。
+- **合流产物合并为一份**（用户拍板：「本质上只要一份就行了」）：砍 brief/flash 双产物，`tracker-merge` 只产出 `agent-tech-brief-<date>.md`——按结论标签分三组的自足周报（值得看/试 3 行、观望/仅记录 1 行、本周热门、其他动态、出处附录），正文不内嵌链接（链接集中出处附录，渲染不画入图内）。`run-weekly.sh` 去 flash 渲染分支改渲染周报本身；`render-flash.mjs` / `flash-card.css` 改名重做为 `render-brief.mjs` / `brief-card.css`；validate.sh 机检项改（分组结构、条目三件行、出处、URL 溯源）。
 - **轻归并 + 条目预算**（用户拍板）：砍跨线归并后条目直出会膨胀（实测 10-25 期输入 harness 24 条更新 + 潮流 17 条，直出条目远超 IM 舒适长度），加单 harness 内轻归并（同类更新合条、能力级单独成条、多候选版本取最新，每 harness 最多 2-3 条）+ 三组合计 10-12 条预算，超出降档「其他动态」一行。
 - **长图视觉改版（卡片周刊风）**（用户拍板：「图片格式简陋，不太让人有读下去的欲望」）：渐变横幅 + 彩色分组标题徽章 + 结论标签分色条目卡（绿=值得看/试、琥珀=值得观望、灰=仅记录、橙=本周热门）+ 是什么/怎么用键标签 + 来源徽章；出处附录不画入图内。
 
 ## v3.4 → v3.5 改造记录（2026-11-13）
 
 - **运行载体迁移：pi → DeepSeek Harness 原生驱动**（用户拍板）：删除 `.agents/skills/`（三条技能）与 `run-weekly.sh`（pi 驱动的顺序编排），新增 `dsh-plugin/`——一个可安装进 DSH 的插件 bundle（`package.json` + `cordis.patch.yml` + `index.js`），在 `apply` 里用 `ctx.effect` 注册四条 runtime 技能（`harness-digest` / `line-trending` / `tracker-merge` / 新增 `tracker-weekly`），并注入 `shellEnv` 变量 `DSH_TRACKER_SCRIPTS`（脚本目录绝对路径）。
-- **总编排 DSH 化**：原 `run-weekly.sh` 的「定运行日/建目录 → 顺序跑三线 → 渲染+机检 → 滚动归档 → 汇报」逻辑迁入 `tracker-weekly` 技能，驱动者是 DSH 自己——用 `skill` 工具依次加载三线，每线产物落盘即检查点、追加 `run.log`；渲染（`r``）与机检（`validate.sh`）失败只告警不阻塞；非本期目录滚动归档逻辑（`.archives/weekly-reports/<today>/`，`lines-`/`reports-` 前缀）原样保留。
-- **脚本打包进插件**：`scripts/`（`fetch-harness.py` / `r`` / `brief-card.css` / `validate.sh`）复制进 `dsh-plugin/scripts/`；技能内引用从 `scripts/<脚本>` 改为 `"$DSH_TRACKER_SCRIPTS/<脚本>"`；`validate.sh` 的项目根定位从「脚本上一级」改为「默认 `$PWD`（DSH shell 在项目根执行），第 2 参数可覆盖」。
+- **总编排 DSH 化**：原 `run-weekly.sh` 的「定运行日/建目录 → 顺序跑三线 → 渲染+机检 → 滚动归档 → 汇报」逻辑迁入 `tracker-weekly` 技能，驱动者是 DSH 自己——用 `skill` 工具依次加载三线，每线产物落盘即检查点、追加 `run.log`；渲染（`render-brief.mjs`）与机检（`validate.sh`）失败只告警不阻塞；非本期目录滚动归档逻辑（`.archives/weekly-reports/<today>/`，`lines-`/`reports-` 前缀）原样保留。
+- **脚本打包进插件**：`scripts/`（`fetch-harness.py` / `render-brief.mjs` / `brief-card.css` / `validate.sh`）复制进 `dsh-plugin/scripts/`；技能内引用从 `scripts/<脚本>` 改为 `"$DSH_TRACKER_SCRIPTS/<脚本>"`；`validate.sh` 的项目根定位从「脚本上一级」改为「默认 `$PWD`（DSH shell 在项目根执行），第 2 参数可覆盖」。
 - **技能登记去 frontmatter**：原 `.agents/skills/*/SKILL.md` 的 YAML frontmatter（name/description）迁入 `index.js` 的 `SKILLS` 数组作为注册字段，技能正文只保留 Markdown 内容。同名 runtime 技能与项目技能并存时项目技能优先，故删除 `.agents/skills/` 使插件成为唯一事实来源。
 - **配置契约简化**：`.env` 白名单只保留 `GH_TOKEN` / `FLASH_SCALE`（去掉 `PI_PROVIDER`/`PI_MODEL`/`PI_API_KEY`/`PI_THINKING`）；`tracker-weekly` 启动时加载仓库根 `.env`（已导出同名变量优先，与原优先级一致）。`.agents/AGENTS.md` 去掉 pi Context7 规则，改指 DSH 插件用法。
 - **已知边界**：`playwright` 依赖经 `node_modules` 向上解析——插件位于本仓库内时能解析到仓库 `node_modules`；被复制/打包到 DSH profile 目录后需另行安装 playwright（渲染失败只告警不阻塞）。`python3`/`curl`/`bash [[ ]]`/`date +%F` 假定 bash 兼容 shell（Windows 用 Git Bash / WSL）。
+
+## v3.5 → v3.6 改造记录（2026-11-14）
+
+- **周报 md 密度加大**（用户拍板：「brief markdown 的报告内容过于简短了，可以适当丰富下细节」）：原规格把每条压到「是什么 1-2 句 / 怎么用 1 句 / 观望仅记录 1 行」，两份线产物里的纳入理由、其他动态、横向趋势、本线研判、候选提名大半没进周报。改规格：大盘 2-4 句；值得看/试「是什么」2-4 句、「怎么用」1-2 句；观望/仅记录 1-2 句（首句机制 + 次句为什么观望 / 补充数字）；热门每条 1-2 句；其他动态版本后括注覆盖点（括注内禁用顿号——渲染器按顿号数版本数）。**条目数不膨胀（预算 10-12 不变），每条写透**；后续句只从输入产物取材，判断可新增、事实不可。
+- **渲染首句语义补齐**：一页信息图的单行卡本就只取首句，但潮流板「生态看点」两行（t-w / t-how）与风向行此前用整段截断——md 加长直接把图面推高 74px、掉到 4/8 档。改为同样按 `clause()` 首句语义取文后回稳到 2/8 档（98% 字号、填充 99%；大盘与生态看点各多带一句正文，信息更密）。**契约定型：md 是全量事实层，一页图是首句摘要层**——写 md 时首句必须独立成卡（机制 / 数字 / 判断放首句），细节跟在后续句。
+- **修复设计笔记坏损**：71a35ec 起多处脚本名被截成 `` r` `` / `` r`` ``（当时的编辑事故残留，git 对照 8c54e2d 取回原文），并把总体架构图从已废弃的 run-weekly.sh / pi 流程更新为 tracker-weekly（DSH 技能编排）现行流程；状态行 v3.4 → v3.6。
