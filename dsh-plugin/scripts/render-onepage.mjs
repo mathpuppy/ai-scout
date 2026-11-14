@@ -36,15 +36,15 @@ const inlineFmt = (s) => {
   return parts.map((p, i) => (i % 2 ? `<code>${p}</code>` : p)).join('')
 }
 const trunc = (s, n) => { const v = String(s ?? ''); return v.length <= n ? v : v.slice(0, n - 1).replace(/[，、,;\s]+$/, '') + '…' }
-/** 智能截断：优先在「，、；与」处收尾（只缩短不增长），避免把词切成「SubAge…」「与空…」 */
+/** 智能截断：优先在「，、；/与」处收尾（只缩短不增长），避免把词切成「SubAge…」「与空…」「login/logo…」 */
 const truncSmart = (s, n) => {
   const v = String(s ?? '')
   if (v.length <= n) return v
   const cut = v.slice(0, n)
   const minKeep = Math.max(8, Math.round(n * 0.6))
-  for (const re of [/^.*[，、；]/, /^.*与/, /^.*\s/]) {
+  for (const re of [/^.*[，、；/]/, /^.*与/, /^.*\s/]) {
     const m = cut.match(re)
-    if (m && m[0].length >= minKeep) return m[0].replace(/[，、；与\s]+$/, '')
+    if (m && m[0].length >= minKeep) return m[0].replace(/[，、；/与\s]+$/, '')
   }
   return trunc(v, n)
 }
@@ -264,11 +264,11 @@ const FIT_CARDS = () => {
       if (measure(full.slice(0, mid) + '…') <= box) lo = mid
       else hi = mid - 1
     }
-    // 若切点前不太远处有分句边界，退到边界上，读起来更完整
+    // 若切点前不太远处有分句边界，退到边界上，读起来更完整（55%：宁可少几个字也不切在短语中间）
     let cut = lo
     const seg = full.slice(0, cut)
     const m = seg.match(/^[\s\S]*[，、；]/)
-    if (m && m[0].length >= Math.floor(cut * 0.75)) cut = m[0].length
+    if (m && m[0].length >= Math.floor(cut * 0.55)) cut = m[0].length
     el.textContent = full.slice(0, cut).replace(/[，、；\s]+$/, '') + '…'
     return 'cut'
   }
@@ -345,7 +345,7 @@ function renderTrend(opt) {
       <div class="h-repo">${esc(shown)}</div>
       <div class="h-bar"><i style="width:${Math.max(5, Math.round((h.delta / maxDelta) * 100))}%"></i></div>
       <div class="h-delta">+${(h.delta / 1000).toFixed(1)}k</div>
-      <div class="h-desc">${inlineFmt(truncSmart(h.desc, opt.descLen))}</div>
+      <div class="h-desc">${inlineFmt(clause(h.desc, opt.descLen))}</div>
     </div>`
   }).join('')
 
@@ -359,8 +359,9 @@ function renderTrend(opt) {
     return `<div class="t-row">
       <div class="t-h"><span class="t-name">${inlineFmt(e.act)}</span>` +
       (repoName ? `<span class="t-repo">${esc(repoName)}</span>` : '') + badge + `</div>` +
-      (st.clean ? `<div class="t-w">${inlineFmt(truncSmart(st.clean, opt.whatLen))}</div>` : '') +
-      (opt.showHow && e.how ? `<div class="t-how">${inlineFmt(truncSmart(e.how, opt.howLen))}</div>` : '') +
+      // 与单行卡同一「首句语义」：图面只取首个分句，md 后续句的丰富细节不推高图面
+      (st.clean ? `<div class="t-w">${inlineFmt(clause(st.clean, opt.whatLen))}</div>` : '') +
+      (opt.showHow && e.how ? `<div class="t-how">${inlineFmt(clause(e.how, opt.howLen))}</div>` : '') +
       `</div>`
   }).join('')
 
