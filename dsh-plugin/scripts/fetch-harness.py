@@ -247,10 +247,19 @@ def main():
         parts.append("## 缺口\n（无，五个渠道全部抓取成功）")
 
     digest = "\n".join(parts)
-    print(digest)
     if len(sys.argv) >= 4 and sys.argv[3]:
-        with open(sys.argv[3], "w", encoding="utf-8") as f:
-            f.write(digest + "\n")
+        try:
+            with open(sys.argv[3], "w", encoding="utf-8") as f:
+                f.write(digest + "\n")
+        except OSError as e:
+            # DSH 沙箱下子进程为低完整性，可能无权直写中完整性的 raw/ 子目录；
+            # 退化为仅 stdout 输出，由 shell 重定向落盘。
+            sys.stderr.write(f"[fetch-harness] 直写 {sys.argv[3]} 失败（{e}），摘要改由 stdout 输出\n")
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    print(digest)
     return 0
 
 

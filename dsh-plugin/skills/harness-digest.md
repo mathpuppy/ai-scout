@@ -28,9 +28,11 @@
 模型**不直接 curl 原始数据**，先跑预处理脚本（脚本由 ai-scout 插件提供，绝对路径在环境变量 $DSH_TRACKER_SCRIPTS；在项目根执行，产物落盘路径相对 cwd）：
 
 > pwsh 下环境变量写作 `$env:DSH_TRACKER_PYTHON` / `$env:DSH_TRACKER_SCRIPTS`，Python 用 `$env:DSH_TRACKER_PYTHON`（本机 `python3` 是 Microsoft Store 占位符，不可用）；兜底 curl 一律用 `curl.exe`（pwsh 的 `curl` 是 Invoke-WebRequest 别名）。
+>
+> **落盘方式**：脚本把摘要写到 stdout，由 shell 重定向写入目标文件——不要依赖脚本直写。原因：DSH 沙箱把脚本子进程降到低完整性，不能直写中完整性的 `raw/` 子目录；shell（pwsh）是中完整性，重定向落盘即可。pwsh 下先设 `$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()`，再 `& $env:DSH_TRACKER_PYTHON "$env:DSH_TRACKER_SCRIPTS/fetch-harness.py" <窗口起点> <窗口终点> | Set-Content -Path raw/lines/<运行日>/harness-fetch.md -Encoding utf8`。
 
 ```bash
-"$DSH_TRACKER_PYTHON" "$DSH_TRACKER_SCRIPTS/fetch-harness.py" <窗口起点> <窗口终点> raw/lines/<运行日>/harness-fetch.md
+"$DSH_TRACKER_PYTHON" "$DSH_TRACKER_SCRIPTS/fetch-harness.py" <窗口起点> <窗口终点> > raw/lines/<运行日>/harness-fetch.md
 ```
 
 脚本确定性完成以下工作（Python 标准库，零新依赖；api.github.com 共 4 次调用，匿名 60 次/小时额度内，重试翻倍也在额度内；raw.githubusercontent.com 不占额度）：
