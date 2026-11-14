@@ -49,3 +49,8 @@ venv/
 Thumbs.db
 desktop.ini
 .zcodeignore
+
+# ===== tracker intermediates =====
+raw/lines/*/harness-fetch.md
+raw/lines/*/trending.html
+raw/lines/*/trending-parsed.txt

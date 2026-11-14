@@ -1,0 +1,4 @@
+- insert:
+    - id: ai-scout-tracker
+      name: '@ai-scout/tracker'
+      config: {}
