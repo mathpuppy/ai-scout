@@ -49,6 +49,24 @@ const truncSmart = (s, n) => {
   return trunc(v, n)
 }
 
+/** 按分句预算取前若干小句（逗号/顿号为界），凑不成整句再退化为智能截断。
+ *  单行卡片只能放一句，拼出来的才读得顺，不会切在词中间。 */
+function clause(s, n) {
+  const v = String(s ?? '').replace(/^新增\s*/, '').trim()
+  if (!v) return ''
+  if (v.length <= n) return v
+  const parts = v.split(/[。；]/)[0].split(/[，、]/).map((p) => p.trim()).filter(Boolean)
+  // 跳过「升级到 v0.x」这类纯版本号小句，优先给有动作内容的那句
+  const usable = parts.filter((p, i) => !(i === 0 && /^(升级到|更新到|发布)\s*v?\d/.test(p)))
+  let out = ''
+  for (const p of usable) {
+    const next = out ? `${out}，${p}` : p
+    if (next.length > n) break
+    out = next
+  }
+  return out || truncSmart(usable[0] ?? v, n)
+}
+
 /** 去掉条目标题里的噪声：〔tag〕、括号补充、家名前缀、前导版本号 */
 const cleanTitle = (s, stripRe) =>
   s
@@ -193,12 +211,12 @@ const NATURE_WORDS = [
   [/技能|skill|审计|规范|分发/i, '分发'],
   [/网关|浏览器|工作区|桌面|界面|Desktop|标签页/, '形态'],
 ]
-function nature(b) {
-  const pool = [...b.go, ...b.watch, ...b.log].map((e) => e.title + ' ' + (e.what ?? '') + ' ' + (e.desc ?? '')).join(' ')
-  const word = NATURE_WORDS.find(([re]) => re.test(pool))?.[1] ?? (b.go.length ? '能力' : '记录')
-  const sym = b.go.length ? '▲' : b.watch.length ? '◆' : '·'
-  const cls = b.go.length ? 'n-go' : b.watch.length ? 'n-watch' : 'n-log'
-  return { text: sym + word, cls }
+/** 单条目的性质标签：符号由结论定（▲可试/◆观望/·记录），词由该条目自身文本推断 */
+function cardNature(entry, kind) {
+  const pool = `${entry.title ?? ''} ${entry.what ?? ''} ${entry.desc ?? ''}`
+  const word = NATURE_WORDS.find(([re]) => re.test(pool))?.[1] ?? (kind === 'go' ? '能力' : '记录')
+  const sym = kind === 'go' ? '▲' : kind === 'watch' ? '◆' : '·'
+  return sym + word
 }
 
 function versionCount(b) {
@@ -214,52 +232,104 @@ function versionCount(b) {
 function deriveAct(e) {
   if (e.act && !/步进|迭代|杂项|小幅|常规/.test(e.act)) return e.act
   const d = (e.desc ?? '').replace(/^新增\s*/, '').split(/[，。；]/)[0].trim()
-  return d || e.act || '常规迭代'
+  if (!d) return e.act || '常规迭代'
+  // 首句过长又没有逗号时（如「pi auth login/logout 与空闲缓存预热」）在「与」处断开，标题只取前半
+  if (d.length > 22) {
+    const head = d.split('与')[0].trim()
+    if (head.length >= 8 && head.length < d.length) return head
+  }
+  return d
 }
 
 // ────────────────────────── 组装 HTML ──────────────────────────
 const rows = HARNESS.filter((b) => b.go.length || b.watch.length || b.log.length || b.other)
 
-function renderHarnessRow(b, opt) {
-  const nat = nature(b)
-  const vc = versionCount(b)
-  let main = ''
-
-  if (b.go.length) {
-    main = b.go.slice(0, opt.maxGo).map((e) => {
-      const stars = extractStars(e.what ?? '')
-      return `<div class="m-act">${inlineFmt(e.act)}</div>` +
-        (stars.clean ? `<div class="m-what">${inlineFmt(truncSmart(stars.clean, opt.whatLen))}</div>` : '') +
-        (opt.showHow && e.how ? `<span class="m-how">${inlineFmt(truncSmart(e.how, opt.howLen))}</span>` : '')
-    }).join('')
-  } else {
-    const one = b.watch[0] ?? b.log[0]
-    if (one) {
-      const act = truncSmart(deriveAct(one), opt.compactLen)
-      const desc = String(one.desc ?? '').replace(/^新增\s*/, '')
-      // 标题已被说明覆盖时不再重复输出一行（如 pi：act「pi auth login/logout」就在 desc 开头）
-      if (desc.startsWith(act)) {
-        main = `<div class="m-act"><b>${inlineFmt(act)}</b>${inlineFmt(truncSmart(desc.slice(act.length), opt.whatLen))}</div>`
-      } else {
-        main = `<div class="m-act">${inlineFmt(act)}</div>` +
-          (opt.showHow && one.desc ? `<div class="m-what">${inlineFmt(truncSmart(one.desc, opt.whatLen))}</div>` : '')
-      }
+/** 单行卡片的两段正文按「实测宽度」分配后裁到分句边界：
+ *  量出动作/性质/正文/怎么用的自然宽度 → 怎么用最多占一半，其余给正文 → 各自裁到分句边界。
+ *  比按字符数猜预算准，中英混排、代码片段、不同家名长度都能自适应。 */
+const FIT_CARDS = () => {
+  const GAP = 7
+  const PAD = 24          // .hcard 左右各 12px
+  const SAFETY = 8        // 留一点余量，避免四舍五入后挤到换行/滚动
+  const fit = (el) => {
+    const full = el.textContent
+    const box = el.clientWidth
+    if (el.scrollWidth <= box) return 'ok'
+    const measure = (t) => { el.textContent = t; return el.scrollWidth }
+    // 二分找「最长且带省略号还放得下」的字符数，避免分句粒度太粗浪费空间
+    let lo = 0
+    let hi = full.length
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2)
+      if (measure(full.slice(0, mid) + '…') <= box) lo = mid
+      else hi = mid - 1
     }
+    // 若切点前不太远处有分句边界，退到边界上，读起来更完整
+    let cut = lo
+    const seg = full.slice(0, cut)
+    const m = seg.match(/^[\s\S]*[，、；]/)
+    if (m && m[0].length >= Math.floor(cut * 0.75)) cut = m[0].length
+    el.textContent = full.slice(0, cut).replace(/[，、；\s]+$/, '') + '…'
+    return 'cut'
   }
+  const stats = {}
+  const bump = (k) => { stats[k] = (stats[k] ?? 0) + 1 }
+  for (const c of document.querySelectorAll('.hcard')) {
+    const act = c.querySelector('.hc-act')
+    const w = c.querySelector('.hc-what')
+    const h = c.querySelector('.hc-how')
+    const nat = c.querySelector('.hc-nat')
+    const nGaps = GAP * ((w ? 1 : 0) + (h ? 1 : 0) + 1)
+    const avail = c.clientWidth - PAD - (act?.scrollWidth ?? 0) - (nat?.scrollWidth ?? 0) - nGaps - SAFETY
+    if (w && h) {
+      const howW = Math.min(h.scrollWidth, Math.floor(avail * 0.5))
+      h.style.width = howW + 'px'
+      w.style.width = Math.max(80, avail - howW) + 'px'
+    } else if (w) {
+      w.style.width = Math.max(80, avail) + 'px'
+    }
+    if (h) bump('how_' + fit(h))
+    if (w) bump('what_' + fit(w))
+    if (c.scrollWidth > c.clientWidth + 1) bump('card_over')
+    ;(stats.cards ??= []).push({
+      t: (act?.textContent ?? '').slice(0, 10),
+      cw: c.clientWidth, act: act?.scrollWidth ?? 0, nat: nat?.scrollWidth ?? 0,
+      avail, wset: w?.style.width ?? '', hset: h?.style.width ?? '',
+      wuse: w?.clientWidth ?? 0, huse: h?.clientWidth ?? 0,
+    })
+  }
+  return stats
+}
 
-  // 观望 / 仅记录条目降为同行注脚：结论标签保留，但只占一行
-  const sib = [
-    ...b.watch.slice(b.go.length ? 0 : 1).map((e) => ({ text: deriveAct(e), kind: '观望' })),
-    ...b.log.slice(!b.go.length && !b.watch.length ? 1 : 0).map((e) => ({ text: deriveAct(e), kind: '记录' })),
-  ]
-  const sibHtml = opt.showSib && sib.length
-    ? `<div class="m-sib">另：${sib.map((s) => `${inlineFmt(truncSmart(s.text, opt.compactLen))}<em>（${s.kind}）</em>`).join(' · ')}</div>`
-    : ''
+/** 一个条目 = 一张单行卡片：动作 · 是什么(一句) ▸ 怎么用(一句) [性质]；超出宽度由 FIT_CARDS 裁。 */
+function cardHTML(entry, kind, opt) {
+  const act = kind === 'go' ? entry.act : deriveAct(entry)
+  const rawWhat = kind === 'go' ? (entry.what ?? '') : (entry.desc ?? '')
+  const st = extractStars(rawWhat)
+  // 说明开头就是标题本身时（如 pi）去掉重复部分，避免同一句话说两遍
+  let whatSrc = st.clean.replace(/^新增\s*/, '')
+  if (act && whatSrc.startsWith(act)) whatSrc = whatSrc.slice(act.length).replace(/^[与和，、：:\s]+/, '')
+  const what = clause(whatSrc, opt.whatLen)
+  const how = kind === 'go' && opt.showHow && entry.how ? clause(entry.how, opt.howLen) : ''
+  return `<div class="hcard hc-${kind}">` +
+    `<span class="hc-act">${inlineFmt(truncSmart(act, opt.actLen))}</span>` +
+    (what ? `<span class="hc-what">${inlineFmt(what)}</span>` : '') +
+    (how ? `<span class="hc-how">${inlineFmt(how)}</span>` : '') +
+    `<span class="hc-nat">${esc(cardNature(entry, kind))}</span>` +
+    `</div>`
+}
 
-  return `<div class="m-row">
-    <div class="m-name">${esc(b.label)}<span>${esc(b.note)}</span></div>
-    <div>${main}${sibHtml}</div>
-    <div class="m-nature ${nat.cls}">${esc(nat.text)}${vc ? `<span class="n-note">${esc(vc)}</span>` : ''}</div>
+/** 一家一组：左侧家名 + 版本数只出现一次，右侧堆它的单行卡片（可试 > 观望 > 记录） */
+function renderHarnessGroup(b, opt) {
+  const vc = versionCount(b)
+  const cards = [
+    ...b.go.slice(0, opt.maxGo).map((e) => cardHTML(e, 'go', opt)),
+    ...b.watch.map((e) => cardHTML(e, 'watch', opt)),
+    ...b.log.map((e) => cardHTML(e, 'log', opt)),
+  ].join('')
+  return `<div class="hgroup">
+    <div class="hg-label"><b>${esc(b.label)}</b><span>${esc(b.note)}${vc ? `<br>${esc(vc)}` : ''}</span></div>
+    <div class="hg-cards">${cards}</div>
   </div>`
 }
 
@@ -301,11 +371,14 @@ function renderTrend(opt) {
       const star = st.delta ? `<span class="t-mini-star">+${st.delta}★</span>` : ''
       const body = st.clean ? `<span>— ${inlineFmt(truncSmart(st.clean, miniLen))}</span>` : ''
       return `<div class="t-mini"><span class="tag ${k}">${label}</span>` +
-        `<b>${inlineFmt(truncSmart(deriveAct(e), opt.compactLen))}</b>${body}${star}</div>`
+        `<b>${inlineFmt(truncSmart(deriveAct(e), opt.compactLen ?? opt.actLen))}</b>${body}${star}</div>`
     })
     .join('')
 
   if (!hotHtml && !ecoHtml && !miniHtml) return ''
+  const windLine = model.wind
+    ? `<div class="t-wind">${inlineFmt(clause(model.wind, opt.windLen ?? 72))}</div>`
+    : ''
 
   return `<section class="board board-trend">
     <div class="board-head">
@@ -313,6 +386,7 @@ function renderTrend(opt) {
       <span class="board-title">GitHub 潮流</span>
       <span class="board-note">社区项目 · 按周星增</span>
     </div>
+    ${windLine}
     ${hotHtml}
     ${ecoHtml || miniHtml ? `<div class="t-label">生态看点</div>${ecoHtml}${miniHtml}` : ''}
   </section>`
@@ -341,8 +415,7 @@ function renderHTML(opt) {
         <span class="board-title">Harness 追踪</span>
         <span class="board-note">官方发布渠道 · 本期关键动作</span>
       </div>
-      <div class="m-head"><div>Harness</div><div>本期动作 · 是什么 / 怎么用</div><div class="m-nature">性质</div></div>
-      ${rows.map((b) => renderHarnessRow(b, opt)).join('')}
+      ${rows.map((b) => renderHarnessGroup(b, opt)).join('')}
     </section>
     ${renderTrend(opt)}
   </div>
@@ -356,28 +429,30 @@ const SCALE = Math.min(3, Math.max(1, Number(process.env.BRIEF_SCALE) || 1))
 const outPath = mdPath.replace(/\.md$/, '.png')
 mkdirSync(dirname(outPath), { recursive: true })
 
-// 降级阶梯：先压正文信息量，再删榜尾条目，最后整页缩字号
+// 降级阶梯：单行卡片的正文长度由 FIT_CARDS 按实测宽度裁，这里的 whatLen/howLen 只是"最多给多少"的上限
 const STEPS = [
-  { whatLen: 150, howLen: 58, descLen: 34, compactLen: 26, heroLen: 200, maxGo: 2, showHow: true,  showSib: true,  hotCount: 5, fit: 1 },
-  { whatLen: 130, howLen: 50, descLen: 30, compactLen: 24, heroLen: 185, maxGo: 2, showHow: true,  showSib: true,  hotCount: 5, fit: 0.98 },
-  { whatLen: 105, howLen: 40, descLen: 24, compactLen: 21, heroLen: 158, maxGo: 2, showHow: true,  showSib: true,  hotCount: 5, fit: 0.96 },
-  { whatLen: 100, howLen: 38, descLen: 24, compactLen: 20, heroLen: 150, maxGo: 2, showHow: true,  showSib: true,  hotCount: 4, fit: 0.94 },
-  { whatLen: 88,  howLen: 32, descLen: 22, compactLen: 18, heroLen: 135, maxGo: 1, showHow: true,  showSib: true,  hotCount: 4, fit: 0.92 },
-  { whatLen: 76,  howLen: 0,  descLen: 20, compactLen: 16, heroLen: 120, maxGo: 1, showHow: false, showSib: true,  hotCount: 3, fit: 0.90 },
-  { whatLen: 64,  howLen: 0,  descLen: 18, compactLen: 14, heroLen: 110, maxGo: 1, showHow: false, showSib: false, hotCount: 3, fit: 0.88 },
-  { whatLen: 52,  howLen: 0,  descLen: 16, compactLen: 12, heroLen: 100, maxGo: 1, showHow: false, showSib: false, hotCount: 3, fit: 0.85 },
+  { actLen: 22, whatLen: 110, howLen: 52, descLen: 34, ecoLen: 100, miniLen: 58, windLen: 92, heroLen: 200, maxGo: 2, showHow: true,  showSib: true,  hotCount: 5, fit: 1 },
+  { actLen: 20, whatLen: 100, howLen: 48, descLen: 32, ecoLen: 92,  miniLen: 54, windLen: 84, heroLen: 190, maxGo: 2, showHow: true,  showSib: true,  hotCount: 5, fit: 0.98 },
+  { actLen: 18, whatLen: 92,  howLen: 44, descLen: 29, ecoLen: 84,  miniLen: 48, windLen: 76, heroLen: 175, maxGo: 2, showHow: true,  showSib: true,  hotCount: 5, fit: 0.96 },
+  { actLen: 17, whatLen: 84,  howLen: 40, descLen: 26, ecoLen: 74,  miniLen: 42, windLen: 68, heroLen: 155, maxGo: 2, showHow: true,  showSib: true,  hotCount: 4, fit: 0.94 },
+  { actLen: 16, whatLen: 76,  howLen: 36, descLen: 23, ecoLen: 64,  miniLen: 36, windLen: 60, heroLen: 140, maxGo: 1, showHow: true,  showSib: true,  hotCount: 4, fit: 0.92 },
+  { actLen: 15, whatLen: 66,  howLen: 0,  descLen: 21, ecoLen: 54,  miniLen: 30, windLen: 52, heroLen: 125, maxGo: 1, showHow: false, showSib: true,  hotCount: 3, fit: 0.90 },
+  { actLen: 14, whatLen: 56,  howLen: 0,  descLen: 19, ecoLen: 46,  miniLen: 26, windLen: 46, heroLen: 112, maxGo: 1, showHow: false, showSib: false, hotCount: 3, fit: 0.88 },
+  { actLen: 13, whatLen: 46,  howLen: 0,  descLen: 17, ecoLen: 40,  miniLen: 22, windLen: 40, heroLen: 100, maxGo: 1, showHow: false, showSib: false, hotCount: 3, fit: 0.85 },
 ]
 
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: CANVAS_W, height: CANVAS_H }, deviceScaleFactor: SCALE })
 
 let used = null
+let fitStats = null
 let over = 0
 let fill = 0
 const trace = []
 for (const [i, opt] of STEPS.entries()) {
   await page.setContent(renderHTML(opt), { waitUntil: 'networkidle' })
   await page.evaluate((px) => { document.documentElement.style.fontSize = px + 'px' }, BASE_PX * opt.fit)
+  fitStats = await page.evaluate(FIT_CARDS)     // 单行卡片：按实测宽度分配 + 裁到分句边界
   const h = await page.evaluate(() => {
     const body = document.querySelector('.body')
     const top = body.getBoundingClientRect().top
@@ -392,7 +467,10 @@ for (const [i, opt] of STEPS.entries()) {
   if (over <= 0) { used = { opt, i, h }; break }
   if (i === STEPS.length - 1) used = { opt, i, h }
 }
-if (process.env.DEBUG) console.table(trace)
+if (process.env.DEBUG) {
+  console.table(trace)
+  if (fitStats?.cards) console.table(fitStats.cards)
+}
 
 await page.locator('.card').screenshot({ path: outPath })
 await browser.close()

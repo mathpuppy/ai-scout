@@ -58,7 +58,7 @@ body {
 
 /* ── 本期大盘 ── */
 .hero {
-  margin: 14px 0 16px;
+  margin: 18px 0 20px;
   padding: 1px 0 1px 18px;
   border-left: 5px solid var(--accent);
   font-size: 1.24rem;
@@ -93,46 +93,56 @@ body {
 .board-note { margin-left: auto; font-size: 0.9rem; letter-spacing: 0.08em; color: var(--faint); }
 .board-trend .board-no { background: var(--hot); }
 
-/* ── ① Harness 矩阵行 ── */
-.m-head, .m-row {
+/* ── ① Harness 追踪：按家分组的单行卡片（家名只在组头出现一次）── */
+.hgroup {
   display: grid;
-  grid-template-columns: 146px 1fr 92px;
-  gap: 16px;
+  grid-template-columns: 100px 1fr;
+  gap: 12px;
+  padding: 9px 0;
+}
+.hg-label { padding-top: 7px; }
+.hg-label b { display: block; font-size: 1.18rem; font-weight: 800; line-height: 1.2; color: var(--ink); letter-spacing: -0.2px; }
+.hg-label span { display: block; margin-top: 2px; font-size: 0.78rem; font-weight: 500; line-height: 1.3; color: var(--faint); }
+.hg-cards { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+/* 一行卡片：动作 · 是什么 ▸ 怎么用 [性质] */
+.hcard {
+  display: flex;
   align-items: baseline;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--go);
+  border-radius: 9px;
+  background: #fff;
+  white-space: nowrap;
+  overflow: hidden;
 }
-.m-head {
-  padding-bottom: 6px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--faint);
-  text-transform: uppercase;
-}
-.m-head .m-nature { text-align: right; }
-.m-row { padding: 8px 0; border-bottom: 1px solid var(--rule); }
-.m-row:last-child { border-bottom: none; }
-.m-name { font-size: 1.36rem; font-weight: 800; line-height: 1.25; color: var(--ink); letter-spacing: -0.2px; }
-.m-name span { display: block; margin-top: 2px; font-size: 0.82rem; font-weight: 500; color: var(--faint); }
-.m-act { font-size: 1.26rem; font-weight: 700; line-height: 1.35; color: var(--ink); }
-.m-act + .m-act { margin-top: 8px; }
-.m-what { margin-top: 2px; font-size: 1rem; line-height: 1.5; color: var(--muted); }
-.m-how { display: block; margin-top: 2px; font-size: 0.98rem; line-height: 1.45; color: var(--muted); }
-.m-how::before { content: "▸ "; color: var(--go); font-weight: 700; }
-.m-sib { margin-top: 5px; font-size: 0.92rem; line-height: 1.4; color: var(--faint); }
-.m-sib em { font-style: normal; color: var(--watch); }
-.m-nature { text-align: right; font-size: 0.96rem; font-weight: 700; white-space: nowrap; }
-.n-go { color: var(--go); }
-.n-watch { color: var(--watch); }
-.n-log { color: var(--log); }
-.n-note { display: block; margin-top: 3px; font-size: 0.82rem; font-weight: 500; color: var(--faint); }
+.hc-watch { border-left-color: var(--watch); }
+.hc-log { border-left-color: var(--log); }
+.hc-act { flex: 0 0 auto; font-size: 1.14rem; font-weight: 700; color: var(--ink); }
+.hc-what { flex: 0 0 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 0.99rem; color: var(--muted); }
+.hc-how { flex: 0 0 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 0.99rem; color: var(--muted); }
+.hc-how::before { content: "▸ "; color: var(--go); font-weight: 700; }
+.hc-watch .hc-how::before { color: var(--watch); }
+.hc-log .hc-how::before { color: var(--log); }
+.hc-nat { flex: 0 0 auto; margin-left: auto; font-size: 0.82rem; font-weight: 700; }
 
+/* ── ② 潮流：本周风向导语 ── */
+.t-wind {
+  margin: 0 0 7px;
+  padding: 4px 0 4px 12px;
+  border-left: 4px solid var(--hot);
+  font-size: 0.97rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
 /* ── ② 潮流：星增主榜 ── */
 .h-row {
   display: grid;
   grid-template-columns: 20px 272px 66px 54px 1fr;
   gap: 11px;
   align-items: center;
-  padding: 5px 0;
+  padding: 8px 0;
 }
 .h-rank { font-size: 0.98rem; font-weight: 800; color: var(--hot); }
 .h-repo { font-size: 1.08rem; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -154,7 +164,7 @@ body {
   text-transform: uppercase;
 }
 .t-label::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
-.t-row { padding: 5px 0; border-bottom: 1px solid var(--rule); }
+.t-row { padding: 8px 0; border-bottom: 1px solid var(--rule); }
 .t-row:last-child { border-bottom: none; }
 .t-h { display: flex; align-items: baseline; gap: 10px; }
 .t-name { font-size: 1.14rem; font-weight: 700; color: var(--ink); }
