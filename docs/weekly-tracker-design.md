@@ -20,7 +20,7 @@ run-weekly.sh（手动跑；口径稳定后可挂 cron）
   pi -p "/skill:harness-digest"   → raw/lines/<date>/agent-harness-brief-<date>.md
   pi -p "/skill:line-trending"    → raw/lines/<date>/trending-<date>.md
   pi -p "/skill:tracker-merge"    → reports/<date>/agent-tech-brief-<date>.md
-  node scripts/render-brief.mjs   → reports/<date>/agent-tech-brief-<date>.png（长图，增强产物）
+  node scripts/r` → reports/<date>/agent-tech-brief-<date>.png（一页信息图，增强产物）
 ```
 
 失败恢复 = `./run-weekly.sh --from <skill>` 断点重跑（--from 之前已落盘的线跳过）；每线产物落盘即检查点，运行日志在 `raw/lines/<date>/run.log`。
@@ -42,13 +42,14 @@ run-weekly.sh（手动跑；口径稳定后可挂 cron）
 - 潮流线候选提名区是 harness 线监控名单演化的唯一入口；采纳与否由人改 harness-digest 的监控表。
 - harness 线是给人看的简报，merge 直读它，不要求额外机读产物。
 
-## 合流段（tracker-merge → 一份周报 + 长图）
+## 合流段（tracker-merge → 一份周报 + 一页信息图）
 
 - 输入：两份当期产物，各取文件名日期最新一份；缺哪条线就跳过并标注，**merge 自身零网络请求**，事实只能来自输入文件。
-- 唯一产物 **`reports/<date>/agent-tech-brief-<date>.md`**（2026-11-06 起 brief/flash 双产物合并为一份，用户拍板）：自足、可群发、可渲染长图。结构 = 标题（窗口日期）→ 本期大盘 1-2 句 → 按结论标签分三组（值得看/试、值得观望、仅记录，空组写「无」）→ 本周热门 → 其他动态 → 出处附录。
+- 唯一产物 **`reports/<date>/agent-tech-brief-<date>.md`**（2026-11-06 起 brief/flash 双产物合并为一份，用户拍板）：自足、可群发、可渲染一页信息图。结构 = 标题（窗口日期）→ 本期大盘 1-2 句 → 按结论标签分三组（值得看/试、值得观望、仅记录，空组写「无」）→ 本周热门 → 其他动态 → 出处附录。
 - **条目化与轻归并（只做单线、单 harness 内，不做跨线归并）**：harness 线同一 harness 同类更新合一条（多个 patch 合成「八连发」式）、架构/能力级单独成条、同一功能多候选版本只取最新一条，每 harness 最多 2-3 条；潮流线有价值项目出条目 ≤4 条、其余进「本周热门」清单。**条目预算三组合计约 10-12 条**（实测 10-25 期输入 harness 24 条 + 潮流 17 条，直出条目远超 IM 舒适长度），超出降档进「其他动态」一行（只列版本号/项目名）。
 - 详略两档：值得看/试条目 3 行（标题带日期/版本 → 是什么 → 怎么用），观望/仅记录各 1 行；**正文不内嵌链接**（链接集中出处附录，逐条对应）；行文按「说给同事听」口径——行业黑话换日常词（基座化→成为默认模型、HITL 异步化→边干活边提问），短句直说。默认落盘人工粘贴，webhook 推送见设计原则 6。
-- **周报长图（2026-11-06 改版，卡片周刊风）**：`run-weekly.sh` 末尾调 `scripts/render-brief.mjs`（playwright 无头 chromium）把周报渲染成同目录 `agent-tech-brief-<date>.png`（750px 设计宽，默认 1x 输出、`FLASH_SCALE=2` 出 1500px 高清档；样式在 `scripts/brief-card.css`：渐变横幅、彩色分组标题徽章、结论标签分色条目卡——绿=值得看/试、琥珀=观望、灰=仅记录、橙=热门、是什么/怎么用键标签；出处附录不画入图内）。渲染失败只告警不阻塞（图片是增强产物）。选型记录：IM 图片通道只收位图（SVG 只能当文件发），故走 markdown → HTML → 无头浏览器截长图；satori/Takumi 代码级渲染需自备中文字体且要写结构化模板，doocs/md 只出富文本不出图，均已否。
+- **周报长图（2026-11-06 改版，卡片周刊风）**：`run-weekly.sh` 末尾调 `scripts/r``（playwright 无头 chromium）把周报渲染成同目录 `agent-tech-brief-<date>.png`（750px 设计宽，默认 1x 输出、`FLASH_SCALE=2` 出 1500px 高清档；样式在 `scripts/brief-card.css`：渐变横幅、彩色分组标题徽章、结论标签分色条目卡——绿=值得看/试、琥珀=观望、灰=仅记录、橙=热门、是什么/怎么用键标签；出处附录不画入图内）。渲染失败只告警不阻塞（图片是增强产物）。选型记录：IM 图片通道只收位图（SVG 只能当文件发），故走 markdown → HTML → 无头浏览器截长图；satori/Takumi 代码级渲染需自备中文字体且要写结构化模板，doocs/md 只出富文本不出图，均已否。
+- **一页信息图（2026-11-14 改版，五家矩阵）**：默认交付物由滚动长图改为**定比单页**——`render-onepage.mjs` + `brief-onepage.css` 出 `agent-tech-brief-<date>.png`（1080×1440，3:4）。触发原因（用户拍板：「长图的模式不适合最终的阅读，真实的阅读体验不够好」）：旧长图 750×6498（1:8.66，手机上 4 屏多、IM 缩略图里正文等效 ~7px），且 17 条同字号同级、无 5 秒扫描层。改版要点：① 定比画布（固定 1440px 高，绝不拉伸）；② **双层字号**（大字号速览层 + 小字号细读层，缩略图也能认出本期骨架）；③ **内容减法**——按家名把条目聚合成「五家 harness × 本期关键动作」矩阵，有值得看/试的家展开「怎么用」一行，观望/仅记录压成底部 chip 云，算法派生「性质」列（▲可试/◆观望/·记录 + 能力/实验/维护/配置/分发/形态），其他动态只计版本数；④ 本周黑马用星增条形替代文字列表；⑤ **溢出检测 + 阶梯降级**（星增条 5→3、收 chip、字号逐档 −2%，共 8 档），全档仍溢出才裁切并大声告警（退出码 2），绝不静默裁切。旧长图保留为 `render-brief.mjs` → `-full.png`（需全量细节时显式调用）。矩阵里的家名/性质/星增均由周报 Markdown 自动派生，**md 仍是唯一事实来源**，不新增字段。
 - 结论标签（中立口径，见设计原则 5）：
   - **值得看 / 试**——成熟度足够、上手成本低，可直接试用/采用
   - **值得观望**——方向重要，成熟度或适用场景未明，保持关注
@@ -101,15 +102,15 @@ run-weekly.sh（手动跑；口径稳定后可挂 cron）
 
 ## v3.3 → v3.4 改造记录（2026-11-06）
 
-- **合流产物合并为一份**（用户拍板：「本质上只要一份就行了」）：砍 brief/flash 双产物，`tracker-merge` 只产出 `agent-tech-brief-<date>.md`——按结论标签分三组的自足周报（值得看/试 3 行、观望/仅记录 1 行、本周热门、其他动态、出处附录），正文不内嵌链接（链接集中出处附录，渲染不画入图内）。`run-weekly.sh` 去 flash 渲染分支改渲染周报本身；`render-flash.mjs` / `flash-card.css` 改名重做为 `render-brief.mjs` / `brief-card.css`；validate.sh 机检项改（分组结构、条目三件行、出处、URL 溯源）。
+- **合流产物合并为一份**（用户拍板：「本质上只要一份就行了」）：砍 brief/flash 双产物，`tracker-merge` 只产出 `agent-tech-brief-<date>.md`——按结论标签分三组的自足周报（值得看/试 3 行、观望/仅记录 1 行、本周热门、其他动态、出处附录），正文不内嵌链接（链接集中出处附录，渲染不画入图内）。`run-weekly.sh` 去 flash 渲染分支改渲染周报本身；`render-flash.mjs` / `flash-card.css` 改名重做为 `r`` / `brief-card.css`；validate.sh 机检项改（分组结构、条目三件行、出处、URL 溯源）。
 - **轻归并 + 条目预算**（用户拍板）：砍跨线归并后条目直出会膨胀（实测 10-25 期输入 harness 24 条更新 + 潮流 17 条，直出条目远超 IM 舒适长度），加单 harness 内轻归并（同类更新合条、能力级单独成条、多候选版本取最新，每 harness 最多 2-3 条）+ 三组合计 10-12 条预算，超出降档「其他动态」一行。
 - **长图视觉改版（卡片周刊风）**（用户拍板：「图片格式简陋，不太让人有读下去的欲望」）：渐变横幅 + 彩色分组标题徽章 + 结论标签分色条目卡（绿=值得看/试、琥珀=值得观望、灰=仅记录、橙=本周热门）+ 是什么/怎么用键标签 + 来源徽章；出处附录不画入图内。
 
 ## v3.4 → v3.5 改造记录（2026-11-13）
 
 - **运行载体迁移：pi → DeepSeek Harness 原生驱动**（用户拍板）：删除 `.agents/skills/`（三条技能）与 `run-weekly.sh`（pi 驱动的顺序编排），新增 `dsh-plugin/`——一个可安装进 DSH 的插件 bundle（`package.json` + `cordis.patch.yml` + `index.js`），在 `apply` 里用 `ctx.effect` 注册四条 runtime 技能（`harness-digest` / `line-trending` / `tracker-merge` / 新增 `tracker-weekly`），并注入 `shellEnv` 变量 `DSH_TRACKER_SCRIPTS`（脚本目录绝对路径）。
-- **总编排 DSH 化**：原 `run-weekly.sh` 的「定运行日/建目录 → 顺序跑三线 → 渲染+机检 → 滚动归档 → 汇报」逻辑迁入 `tracker-weekly` 技能，驱动者是 DSH 自己——用 `skill` 工具依次加载三线，每线产物落盘即检查点、追加 `run.log`；渲染（`render-brief.mjs`）与机检（`validate.sh`）失败只告警不阻塞；非本期目录滚动归档逻辑（`.archives/weekly-reports/<today>/`，`lines-`/`reports-` 前缀）原样保留。
-- **脚本打包进插件**：`scripts/`（`fetch-harness.py` / `render-brief.mjs` / `brief-card.css` / `validate.sh`）复制进 `dsh-plugin/scripts/`；技能内引用从 `scripts/<脚本>` 改为 `"$DSH_TRACKER_SCRIPTS/<脚本>"`；`validate.sh` 的项目根定位从「脚本上一级」改为「默认 `$PWD`（DSH shell 在项目根执行），第 2 参数可覆盖」。
+- **总编排 DSH 化**：原 `run-weekly.sh` 的「定运行日/建目录 → 顺序跑三线 → 渲染+机检 → 滚动归档 → 汇报」逻辑迁入 `tracker-weekly` 技能，驱动者是 DSH 自己——用 `skill` 工具依次加载三线，每线产物落盘即检查点、追加 `run.log`；渲染（`r``）与机检（`validate.sh`）失败只告警不阻塞；非本期目录滚动归档逻辑（`.archives/weekly-reports/<today>/`，`lines-`/`reports-` 前缀）原样保留。
+- **脚本打包进插件**：`scripts/`（`fetch-harness.py` / `r`` / `brief-card.css` / `validate.sh`）复制进 `dsh-plugin/scripts/`；技能内引用从 `scripts/<脚本>` 改为 `"$DSH_TRACKER_SCRIPTS/<脚本>"`；`validate.sh` 的项目根定位从「脚本上一级」改为「默认 `$PWD`（DSH shell 在项目根执行），第 2 参数可覆盖」。
 - **技能登记去 frontmatter**：原 `.agents/skills/*/SKILL.md` 的 YAML frontmatter（name/description）迁入 `index.js` 的 `SKILLS` 数组作为注册字段，技能正文只保留 Markdown 内容。同名 runtime 技能与项目技能并存时项目技能优先，故删除 `.agents/skills/` 使插件成为唯一事实来源。
 - **配置契约简化**：`.env` 白名单只保留 `GH_TOKEN` / `FLASH_SCALE`（去掉 `PI_PROVIDER`/`PI_MODEL`/`PI_API_KEY`/`PI_THINKING`）；`tracker-weekly` 启动时加载仓库根 `.env`（已导出同名变量优先，与原优先级一致）。`.agents/AGENTS.md` 去掉 pi Context7 规则，改指 DSH 插件用法。
 - **已知边界**：`playwright` 依赖经 `node_modules` 向上解析——插件位于本仓库内时能解析到仓库 `node_modules`；被复制/打包到 DSH profile 目录后需另行安装 playwright（渲染失败只告警不阻塞）。`python3`/`curl`/`bash [[ ]]`/`date +%F` 假定 bash 兼容 shell（Windows 用 Git Bash / WSL）。

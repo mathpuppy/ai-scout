@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-// render-brief.mjs — 把 agent-tech-brief-<date>.md 渲染成周报长图 PNG（卡片周刊风）
-// 用法: node render-brief.mjs reports/2026-11-06/agent-tech-brief-2026-11-06.md
+// render-brief.mjs — 把 agent-tech-brief-<date>.md 渲染成「全量长图」（卡片周刊风，滚动全长）
+// 用法: node render-brief.mjs reports/2026-11-14/agent-tech-brief-2026-11-14.md
+// 产出: 同目录 agent-tech-brief-<date>-full.png
+// 说明: 默认交付物已改为一页信息图（render-onepage.mjs，1080×1440 定比）。本脚本保留为
+//       「需要全量细节」的备用长图，需要时显式调用；两者共用同一个 brief.md，互不影响。
 // 依赖: playwright（npx 解析全局安装即可）+ 已下载的 chromium
 // 结构契约见 tracker-merge 技能④：四个 emoji 分组标题按关键词分色；「## 出处」节不画入图内。
 import { readFileSync, mkdirSync } from 'node:fs'
@@ -91,7 +94,7 @@ const page = await browser.newPage({
 })
 await page.setContent(html, { waitUntil: 'networkidle' })
 const card = page.locator('.card')
-const outPath = mdPath.replace(/\.md$/, '.png')
+const outPath = mdPath.replace(/\.md$/, '-full.png')
 mkdirSync(dirname(outPath), { recursive: true })
 await card.screenshot({ path: outPath })
 await browser.close()

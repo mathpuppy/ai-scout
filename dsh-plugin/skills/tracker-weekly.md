@@ -50,12 +50,15 @@
 
 周报 Markdown 落盘后（`BRIEF="reports/$TODAY/agent-tech-brief-$TODAY.md"`），在项目根执行：
 
-- 长图渲染（playwright + chromium；图片是增强产物，失败只告警不阻塞，无 brief 或缺 chromium 时跳过）：
+- 一页信息图（**默认交付物**；playwright + chromium，1080×1440 定比。图片是增强产物，失败只告警不阻塞，无 brief 或缺 chromium 时跳过）：
   ```bash
   if [ -f "$BRIEF" ] && command -v node >/dev/null 2>&1; then
-    node "$DSH_TRACKER_SCRIPTS/render-brief.mjs" "$BRIEF" || echo "警告：长图渲染失败（不影响 Markdown 产物）"
+    node "$DSH_TRACKER_SCRIPTS/render-onepage.mjs" "$BRIEF" || echo "警告：一页信息图渲染失败（不影响 Markdown 产物）"
   fi
   ```
+  - 产出 `reports/$TODAY/agent-tech-brief-$TODAY.png`，版式为「五家矩阵」：头部标题/期号 → 本期大盘导语 → 五家 harness × 本期关键动作（有「值得看/试」条目的家展开「怎么用」一行）→ 本周黑马星增条 → 观望/仅记录 chip 云。「## 出处」不进图。
+  - 画布固定高度，脚本自带溢出检测与阶梯降级（星增条 5→3、收 chip、字号逐档 -2%）。**报告降级档位**；若打印「已到最紧档仍溢出」，说明本期条目过多，须提示用户删条或改出全量长图，不要当成成功。
+- 全量长图（可选，需要逐条细节时才出）：`node "$DSH_TRACKER_SCRIPTS/render-brief.mjs" "$BRIEF"` → `agent-tech-brief-$TODAY-full.png`。
 - 产物机检（告警不阻塞，退出码非 0 即有告警建议复核）：
   ```bash
   bash "$DSH_TRACKER_SCRIPTS/validate.sh" "$TODAY" || echo "警告：产物校验有告警，建议人工复核"
@@ -80,10 +83,10 @@ done
 
 ## ⑤ 汇报
 
-向用户报告最终周报路径 `reports/$TODAY/agent-tech-brief-$TODAY.md`（及长图 `.png`，若生成），并简述本期三线成败与机检告警数。
+向用户报告最终周报路径 `reports/$TODAY/agent-tech-brief-$TODAY.md`（及一页信息图 `.png`、以及按需出的 `-full.png`），并简述本期三线成败、机检告警数与信息图降级档位。
 
 ## 依赖与环境
 
-- 依赖：`curl.exe`、`$DSH_TRACKER_PYTHON`（harness 抓取预处理，uv 自建 .venv）、`node`（长图渲染）；`gh` 可选（潮流线补拉，缺则告警退匿名限流）。长图渲染另需 chromium：`npx playwright install chromium`（首次渲染前装一次）。
-- `GH_TOKEN`（gh 认证，可选）与 `FLASH_SCALE`（长图倍率）由环境变量提供；无需 pi 相关变量。
+- 依赖：`curl.exe`、`$DSH_TRACKER_PYTHON`（harness 抓取预处理，uv 自建 .venv）、`node`（信息图/长图渲染）；`gh` 可选（潮流线补拉，缺则告警退匿名限流）。渲染另需 chromium：`npx playwright install chromium`（首次渲染前装一次）。
+- `GH_TOKEN`（gh 认证，可选）与 `BRIEF_SCALE`（信息图倍率，默认 1x；长图用 `FLASH_SCALE`）由环境变量提供；无需 pi 相关变量。
 - 脚本目录由插件注入的环境变量 `$DSH_TRACKER_SCRIPTS` 提供，调用脚本一律用它拼绝对路径。
