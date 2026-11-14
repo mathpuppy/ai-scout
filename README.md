@@ -28,7 +28,7 @@ raw/lines/<运行日>/                     # 线产物 + run.log（运行日志�
   trending-<运行日>.md                  # GitHub 潮流线
 reports/<运行日>/                       # 合流产物（唯一周报）
   agent-tech-brief-<运行日>.md          # 周报：按结论标签分组的条目 + 出处附录，可群发
-  agent-tech-brief-<运行日>.png         # 一页信息图（1080×1440，五家矩阵；BRIEF_SCALE=2 出高清档）
+  agent-tech-brief-<运行日>.png         # 一页信息图（1080×1440，① Harness 追踪 ② GitHub 潮流 两块；BRIEF_SCALE=2 出高清档）
 ```
 
 只保留最新一期，历史期次由总编排自动滚入 `.archives/`（git 历史全量可溯）。

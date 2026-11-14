@@ -1,23 +1,23 @@
-/* agent-tech-brief 一页信息图 —— 1080×1440（3:4）定比画布，rem 基准便于整页缩放 */
+/* agent-tech-brief 一页信息图 v2 —— 两块版式（① Harness 追踪 ② GitHub 潮流），1080×1440 定比 */
 :root {
   --ink: #14181f;
-  --muted: #55606f;
-  --faint: #97a0af;
-  --rule: #e3e7ee;
+  --muted: #4d5867;
+  --faint: #8f98a6;
+  --rule: #e1e5ec;
   --surface: #f6f7fa;
   --accent: #4f46e5;
   --accent-2: #7c6cf0;
   --accent-3: #38bdf8;
   --accent-ink: #3f3bbf;
   --accent-soft: #eef0fe;
-  /* 性质符号分色：▲ 可试=绿 / ◐ 观望=琥珀 / ▪ 记录=灰 */
   --go: #0d9f6e;
   --watch: #b45309;
   --log: #64748b;
   --hot: #ea580c;
+  --hot-soft: #fdf0e6;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { font-size: 16px; }              /* JS 阶梯降级时改这一行 */
+html { font-size: 16px; }                 /* 阶梯降级时由 JS 改这一行 */
 body {
   background: #e9ebf1;
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -27,266 +27,177 @@ body {
 
 /* ── 定比画布 ── */
 .card {
-  position: relative;
   display: flex;
   flex-direction: column;
   width: 1080px;
   height: 1440px;
-  overflow: hidden;                    /* 溢出由 JS 检测并降级，绝不静默拉伸 */
-  padding: 0 56px 30px;
+  overflow: hidden;
+  padding: 0 52px 24px;
   background: #fff;
 }
-/* 正文流：定高弹性区，底部页脚永远贴底 */
-.body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
+.body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .topbar {
-  height: 10px;
-  margin: 0 -56px 30px;
+  flex: 0 0 auto;
+  height: 8px;
+  margin: 0 -52px 22px;
   background: linear-gradient(90deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
 }
 
-/* ── 头部：标题 + 期号 ── */
+/* ── 头部 ── */
 .head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding-bottom: 18px;
+  padding-bottom: 13px;
   border-bottom: 2px solid var(--ink);
 }
-.h-title {
-  font-size: 2.6rem;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.5px;
-  color: var(--ink);
-}
-.h-sub {
-  margin-top: 8px;
-  font-size: 1.02rem;
-  letter-spacing: 0.16em;
-  color: var(--faint);
-  text-transform: uppercase;
-}
-.h-period {
-  text-align: right;
-  font-size: 1.55rem;
-  font-weight: 700;
-  color: var(--accent-ink);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-.h-period small {
-  display: block;
-  margin-top: 6px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  color: var(--faint);
-}
+.h-title { font-size: 2.3rem; font-weight: 800; line-height: 1.12; letter-spacing: -0.5px; color: var(--ink); }
+.h-sub { margin-top: 6px; font-size: 0.92rem; letter-spacing: 0.16em; color: var(--faint); text-transform: uppercase; }
+.h-period { text-align: right; font-size: 1.4rem; font-weight: 700; color: var(--accent-ink); white-space: nowrap; }
+.h-period small { display: block; margin-top: 4px; font-size: 0.88rem; font-weight: 500; letter-spacing: 0.08em; color: var(--faint); }
 
-/* ── 本期大盘：左侧竖线导语 ── */
+/* ── 本期大盘 ── */
 .hero {
-  margin: 26px 0 30px;
-  padding: 2px 0 2px 22px;
+  margin: 14px 0 16px;
+  padding: 1px 0 1px 18px;
   border-left: 5px solid var(--accent);
-  font-size: 1.42rem;
-  line-height: 1.62;
+  font-size: 1.24rem;
+  line-height: 1.55;
   color: var(--muted);
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.hero b { color: var(--ink); font-weight: 700; }
 
-/* ── 节标签 ── */
-.label {
+/* ── 板块头 ── */
+.board { margin-bottom: 14px; }
+.board-head {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  font-size: 1.02rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  color: var(--faint);
-  text-transform: uppercase;
+  align-items: baseline;
+  gap: 11px;
+  padding-bottom: 7px;
+  margin-bottom: 11px;
+  border-bottom: 2px solid var(--ink);
 }
-.label::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
+.board-no {
+  align-self: center;
+  padding: 2px 9px;
+  border-radius: 6px;
+  background: var(--accent);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
 }
+.board-title { font-size: 1.28rem; font-weight: 800; letter-spacing: 0.01em; color: var(--ink); }
+.board-note { margin-left: auto; font-size: 0.9rem; letter-spacing: 0.08em; color: var(--faint); }
+.board-trend .board-no { background: var(--hot); }
 
-/* ── 五家矩阵 ── */
-.matrix { margin-bottom: 28px; }
+/* ── ① Harness 矩阵行 ── */
 .m-head, .m-row {
   display: grid;
-  grid-template-columns: 168px 1fr 108px;
-  gap: 20px;
+  grid-template-columns: 146px 1fr 92px;
+  gap: 16px;
   align-items: baseline;
 }
 .m-head {
-  padding: 0 0 8px;
-  font-size: 0.95rem;
+  padding-bottom: 6px;
+  font-size: 0.88rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   color: var(--faint);
-  border-bottom: 1px solid var(--rule);
   text-transform: uppercase;
 }
 .m-head .m-nature { text-align: right; }
-.m-row {
-  padding: 13px 0;
-  border-bottom: 1px solid var(--rule);
+.m-row { padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.m-row:last-child { border-bottom: none; }
+.m-name { font-size: 1.36rem; font-weight: 800; line-height: 1.25; color: var(--ink); letter-spacing: -0.2px; }
+.m-name span { display: block; margin-top: 2px; font-size: 0.82rem; font-weight: 500; color: var(--faint); }
+.m-act { font-size: 1.26rem; font-weight: 700; line-height: 1.35; color: var(--ink); }
+.m-act + .m-act { margin-top: 8px; }
+.m-what { margin-top: 2px; font-size: 1rem; line-height: 1.5; color: var(--muted); }
+.m-how { display: block; margin-top: 2px; font-size: 0.98rem; line-height: 1.45; color: var(--muted); }
+.m-how::before { content: "▸ "; color: var(--go); font-weight: 700; }
+.m-sib { margin-top: 5px; font-size: 0.92rem; line-height: 1.4; color: var(--faint); }
+.m-sib em { font-style: normal; color: var(--watch); }
+.m-nature { text-align: right; font-size: 0.96rem; font-weight: 700; white-space: nowrap; }
+.n-go { color: var(--go); }
+.n-watch { color: var(--watch); }
+.n-log { color: var(--log); }
+.n-note { display: block; margin-top: 3px; font-size: 0.82rem; font-weight: 500; color: var(--faint); }
+
+/* ── ② 潮流：星增主榜 ── */
+.h-row {
+  display: grid;
+  grid-template-columns: 20px 272px 66px 54px 1fr;
+  gap: 11px;
+  align-items: center;
+  padding: 5px 0;
 }
-.m-name {
-  font-size: 1.5rem;
-  font-weight: 800;
-  line-height: 1.3;
-  color: var(--ink);
-  letter-spacing: -0.2px;
-}
-.m-name span {
-  display: block;
-  margin-top: 3px;
-  font-size: 0.88rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--faint);
-}
-.m-act {
-  font-size: 1.38rem;
-  line-height: 1.5;
-  color: var(--ink);
-}
-.m-act b { font-weight: 700; }
-/* 展开行：值得看/试的家，附「怎么用」一行 */
-.m-how {
-  display: block;
-  margin-top: 3px;
-  font-size: 1.08rem;
-  line-height: 1.5;
-  color: var(--muted);
-}
-.m-how::before {
-  content: "▸ ";
-  color: var(--go);
+.h-rank { font-size: 0.98rem; font-weight: 800; color: var(--hot); }
+.h-repo { font-size: 1.08rem; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-bar { height: 9px; border-radius: 5px; background: var(--surface); overflow: hidden; }
+.h-bar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--hot), #f59e0b); }
+.h-delta { text-align: right; font-size: 1rem; font-weight: 700; color: var(--hot); }
+.h-desc { font-size: 0.96rem; line-height: 1.4; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── ② 潮流：生态看点 ── */
+.t-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 0 4px;
+  font-size: 0.86rem;
   font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+  text-transform: uppercase;
 }
-.m-act + .m-act { margin-top: 10px; }
-/* 行内代码（如 `pi auth login/logout`） */
+.t-label::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.t-row { padding: 5px 0; border-bottom: 1px solid var(--rule); }
+.t-row:last-child { border-bottom: none; }
+.t-h { display: flex; align-items: baseline; gap: 10px; }
+.t-name { font-size: 1.14rem; font-weight: 700; color: var(--ink); }
+.t-repo { font-size: 0.92rem; color: var(--faint); letter-spacing: 0.02em; }
+.t-badge {
+  margin-left: auto;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--hot);
+  background: var(--hot-soft);
+  border-radius: 5px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.t-w { margin-top: 1px; font-size: 0.99rem; line-height: 1.45; color: var(--muted); }
+.t-how { margin-top: 1px; font-size: 0.97rem; line-height: 1.45; color: var(--muted); }
+.t-how::before { content: "▸ "; color: var(--hot); font-weight: 700; }
+/* 观望/记录：一行式 */
+.t-mini { display: flex; gap: 8px; align-items: baseline; padding: 5px 0; font-size: 0.97rem; line-height: 1.45; }
+.t-mini .tag { flex: 0 0 auto; font-size: 0.86rem; font-weight: 700; letter-spacing: 0.06em; }
+.t-mini .tag.w { color: var(--watch); }
+.t-mini .tag.l { color: var(--log); }
+.t-mini b { font-weight: 700; color: var(--ink); }
+.t-mini span { color: var(--muted); }
+.t-mini-star { margin-left: auto; font-weight: 700; color: var(--hot); white-space: nowrap; }
+
 code {
   font-family: "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.92em;
   color: var(--accent-ink);
   background: var(--accent-soft);
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
   white-space: nowrap;
 }
-.m-nature {
-  text-align: right;
-  font-size: 1.02rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.n-go    { color: var(--go); }
-.n-watch { color: var(--watch); }
-.n-log   { color: var(--log); }
-.n-note {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.86rem;
-  font-weight: 500;
-  color: var(--faint);
-  letter-spacing: 0.02em;
-}
-
-/* ── 本周黑马：星增条形 ── */
-.hot { margin-bottom: 24px; }
-.h-row {
-  display: grid;
-  grid-template-columns: 24px 300px 1fr 96px;
-  gap: 16px;
-  align-items: center;
-  padding: 7px 0;
-}
-.h-rank {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--hot);
-  font-variant-numeric: tabular-nums;
-}
-.h-repo {
-  font-size: 1.18rem;
-  font-weight: 600;
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.h-bar {
-  height: 12px;
-  border-radius: 6px;
-  background: var(--surface);
-  overflow: hidden;
-}
-.h-bar i {
-  display: block;
-  height: 100%;
-  border-radius: 6px;
-  background: linear-gradient(90deg, var(--hot), #f59e0b);
-}
-.h-delta {
-  text-align: right;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--hot);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── 观望 / 仅记录：chip 云 ── */
-.chips { margin-bottom: 20px; }
-.c-line {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 5px 0;
-}
-.c-tag {
-  flex: 0 0 76px;
-  padding-top: 4px;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-.c-tag em { font-style: normal; color: var(--faint); font-weight: 500; }
-.c-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip {
-  display: inline-block;
-  padding: 5px 14px;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 1.06rem;
-  line-height: 1.45;
-  color: var(--ink);
-}
-.chip-watch { border-color: #f3ddba; background: #fdf7ec; }
-.chip-log   { border-color: var(--rule);  background: #f4f6f9; color: var(--muted); }
 
 /* ── 页脚 ── */
 .foot {
   display: flex;
   flex: 0 0 auto;
   justify-content: space-between;
-  padding-top: 14px;
+  padding-top: 10px;
   border-top: 1px solid var(--rule);
-  font-size: 0.94rem;
+  font-size: 0.88rem;
   color: var(--faint);
 }
